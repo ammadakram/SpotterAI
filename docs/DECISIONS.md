@@ -20,9 +20,20 @@ One line each. Newest at the bottom. Include *why*, and record dead ends so they
 - 2026-11-13 — UI adopts two industry patterns: side-by-side route comparison cards, and a trip summary that says *where* the risk is ("Severe for 18 mi between mile 140–158, ~2 h after departure"), not just totals.
 - 2026-11-13 — Extensions (road surface, NWS alerts, 7-day range, delay prediction) are not built and not mentioned in the Loom.
 - 2026-11-13 — No silent fallbacks: failures surface as clear errors, never quietly substituted data. Why: a fallback in the wrong place hides bugs and wrong data.
+- 2026-11-13 — Services confirmed: HERE v8 truck routing (+ HERE geocoding), Open-Meteo weather, MapLibre map.
+- 2026-11-13 — No weather backup source (MET Norway dropped: it has no snowfall data, and the no-silent-fallbacks rule applies). If Open-Meteo fails, the user sees a clear error. Prevention: caching, plus a dedicated IP or an Open-Meteo API key.
+- 2026-11-13 — Departure: from now to +48 h.
+- 2026-11-13 — Heatmap: slider hour 0 = now. Shows combined risk level by default, with a picker for wind / rain / snow.
+- 2026-11-13 — Load weight = cargo weight (not gross). Valid range 0–45,000 lb (80,000 lb legal gross minus ~35,000 lb tractor-trailer).
+- 2026-11-13 — US only.
+- 2026-11-13 — Time: input and display in the browser's time zone with an abbreviation label; UTC internally.
+- 2026-11-13 — Frontend: React + Vite + TypeScript. No database; Django in-process cache only.
+- 2026-11-13 — Testing: pytest (risk logic + API with recorded fixtures), Vitest (pure helpers). No Playwright/component tests. Linting: ruff, ESLint + Prettier.
+- 2026-11-13 — CI: one GitHub Actions workflow (lint, test, build), added with the project scaffold. No CD for now.
+- 2026-11-13 — Skills vendored in `.claude/skills/`: codebase-design, tdd (Matt Pocock), api-and-interface-design (Addy Osmani).
 - LATER — HOS rest breaks as an optional toggle, after the core is done.
 - LATER — Loom: mention WeatherOptics (the industry's white-label risk engine) once the core is built.
-- LATER — Hosting: Open-Meteo rate-limits per IP, so we need caching and either our own IP (VPS) or an Open-Meteo API key. A VPS is being considered; Hetzner is sold out.
+- LATER — Hosting: VPS vs Vercel + Render. Affects the Open-Meteo rate limit (shared vs dedicated IP).
 
 ## Tried & rejected / mistakes
 - _(none yet)_
