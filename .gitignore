@@ -22,3 +22,6 @@ yarn-error.log*
 .DS_Store
 .vscode/
 .idea/
+
+# Assessment brief (company document, keep out of the public repo)
+docs/*.pdf
