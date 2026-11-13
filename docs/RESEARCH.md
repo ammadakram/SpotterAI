@@ -102,6 +102,16 @@ Django (DRF)
 
 Keep the **risk engine and ranking as pure, framework-free Python modules with thorough unit tests**: every boundary value in the table, each load rule, and ranking tie-breaks. That part is 40% of the grade, and it's the easiest place to prove it's correct.
 
+## 7. Other public submissions (found 2026-11-13)
+
+At least 15 public GitHub repos implement this exact brief (search "weather-aware truck routing"). Their READMEs mostly agree:
+lower-inclusive band edges, sustained wind (gusts shown, not scored), No Travel miles ranked first, distance-weighted 0–4
+average, user-selectable 10/25/50 spacing. Only about one in ten adds optional HOS breaks. Takeaways:
+- Getting the logic right is the minimum everyone meets. What sets a submission apart is UI and map smoothness (40%), clear decision docs, and polish.
+- Practical gotcha several reported: Open-Meteo rate-limits **per IP**, and shared hosts (Render free) hit it. Fallbacks they used: MET Norway (keyless), or an Open-Meteo API key. Plan a cache plus a fallback.
+- Don't read their code closely. Our work must be independent.
+- Spotter's *other* full-stack assessment is an FMCSA HOS trip planner, so HOS is core domain knowledge at Spotter.
+
 ## Sources
 - [HERE pricing](https://developer.here.com/pricing) · [HERE truck routing](https://docs.here.com/routing/docs/routing-v8-truck-routing) · [HERE vehicle properties](https://docs.here.com/routing/docs/routing-v8-vehicle-properties)
 - [ORS hosted API restrictions](https://giscience.github.io/openrouteservice/hosted-api-restrictions)
