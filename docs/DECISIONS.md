@@ -16,7 +16,7 @@ One line each. Newest at the bottom. Include *why*, and record dead ends so they
 - 2026-11-13 — Risk scale: Low 0, Moderate 1, High 2, Severe 3, No Travel 4. Average is distance-weighted.
 - 2026-11-13 — Spacing: user-selectable 10/25/50 dropdown, default 25.
 - 2026-11-13 — ETA past the forecast range: checkpoint shows "No forecast" with a one-line reason, never Low.
-- PENDING — Miles per checkpoint: half the gap to each neighbour (see the 2026-11-13 discussion).
+- 2026-11-13 — Miles per checkpoint: we only sample weather at checkpoints, and each mile of road takes the weather of its nearest checkpoint (midpoint to midpoint; the first and last checkpoints reach the route ends). The stretches sum exactly to the route length, and a test asserts this.
 - LATER — HOS rest breaks as an optional toggle, after the core is done.
 - LATER — Hosting: Open-Meteo rate-limits per IP, so we need caching plus a fallback (MET Norway or an API key). A VPS (own IP) is being considered; Hetzner is sold out.
 

@@ -112,6 +112,25 @@ average, user-selectable 10/25/50 spacing. Only about one in ten adds optional H
 - Don't read their code closely. Our work must be independent.
 - Spotter's *other* full-stack assessment is an FMCSA HOS trip planner, so HOS is core domain knowledge at Spotter.
 
+## 8. What the industry actually ships (researched 2026-11-13)
+
+| Company | Weather feature | Data source |
+|---|---|---|
+| **Spotter TMS** | "Weather map" that tracks conditions and sends automatic alerts (Capterra listing). No public route-level risk scoring, so this assessment is plausibly a prototype of that feature. | not public |
+| **Trimble PC\*MILER** (industry-standard truck routing) | Weather add-on: flags hazards **before departure**, trip summary listing **road names, risk levels, and how long each impact lasts**, **side-by-side route comparison**, wind-alert zones on the route, road surface layer (dry / wet / snow / ice). 7-day forecasts. | WeatherOptics |
+| **Motive** (ELD/telematics) | NWS severe-weather alerts on the live map (incl. High Wind Warning: ≥40 mph sustained or ≥58 mph gusts). WeatherOptics app in their marketplace. | NWS + WeatherOptics |
+| **Samsara** | Weather overlays on the map (radar, wind, snow, precipitation), NWS alerts, audible in-cab alerts for weather in the driver's path. Also uses its own dashcam network to confirm conditions. | The Weather Channel, NWS, own dashcams |
+| **Platform Science** | "Road Risk Index" from 30+ weather variables, trained on historical crash data, up to 7 days ahead. Compares **delay, driver risk and mileage across routes before departure**. | WeatherOptics (RightRoute) |
+| **Drivewyze** | In-cab NWS alerts (incl. wind) when severe weather is within ~50 mi of the route. | NWS |
+| **Tomorrow.io** | `/route` API: send waypoints **with arrival times**, get weather at each point **at its predicted arrival time**. This is exactly the brief's checkpoint-at-ETA model, sold as a product. | own models |
+| **Trucker Route** (driver app) | High-wind recommendations **by load weight**, chain laws, mountain passes. | 511 / NWS |
+
+**Takeaways for our build:**
+- The brief's model (sample along the route, weather at ETA, compare routes before departure) is how the industry does it, so our design is on the right track.
+- UI ideas taken from real products, all within scope: side-by-side route comparison cards; a trip summary that says *where* the risk is ("Severe for 18 mi near mile 140–158, ~2 h after departure"), not just a total; tipping/wind framed as the truck-specific danger.
+- Things they have that the brief doesn't ask for (out of scope; mention in the Loom as how you'd extend it): road surface state, NWS alert overlay (free at api.weather.gov), 7-day horizon, delay prediction.
+- WeatherOptics is the white-label risk engine behind Trimble, Platform Science, and the Motive/Samsara marketplaces.
+
 ## Sources
 - [HERE pricing](https://developer.here.com/pricing) · [HERE truck routing](https://docs.here.com/routing/docs/routing-v8-truck-routing) · [HERE vehicle properties](https://docs.here.com/routing/docs/routing-v8-vehicle-properties)
 - [ORS hosted API restrictions](https://giscience.github.io/openrouteservice/hosted-api-restrictions)
@@ -119,4 +138,5 @@ average, user-selectable 10/25/50 spacing. Only about one in ten adds optional H
 - [Open-Meteo docs](https://open-meteo.com/en/docs) · [Open-Meteo pricing](https://open-meteo.com/en/pricing)
 - [MapLibre heatmap (Stadia)](https://stadiamaps.com/blog/google-maps-heatmap-deprecated-maplibre-migration/) · [deck.gl vs MapLibre](https://atlas.co/comparisons/deck-gl-vs-maplibre/)
 - [WYDOT blow-over advisories](https://dot.state.wy.us/news/light-trailer-advisories-alert-motorists-of-possible-blow-over-risks) · [FreightWaves: high winds](https://www.freightwaves.com/news/high-winds-pose-invisible-threat)
+- [Trimble Weather Intelligence](https://transportation.trimble.com/en/solutions/add-on/weather-intelligence) · [PC*MILER road conditions & wind alerts](https://transportation.trimble.com/node/1653) · [Motive severe weather](https://helpcenter.gomotive.com/hc/en-us/articles/36069175651997-Severe-Weather-Events-on-Live-Map) · [WeatherOptics on Motive](https://marketplace.gomotive.com/app/weatheroptics) · [Samsara weather alerts](https://www.trucknews.com/technology/samsara-taps-ai-to-provide-more-accurate-weather-alerts/1003203489) · [Platform Science](https://platformscience.com/blog/how-technology-helps-fleets-mitigate-extreme-weather) · [Drivewyze](https://drivewyze.com/newsroom/severe-weather-alerts-now-part-of-drivewyze-safety/) · [Tomorrow.io route API](https://llm-docs.tomorrow.io/weather-on-routes) · [Spotter on Capterra](https://www.capterra.com/p/10010114/Spotter/)
 - [Render free tier](https://render.com/articles/platforms-with-a-real-free-tier-for-developers-in-2026)
