@@ -17,8 +17,12 @@ One line each. Newest at the bottom. Include *why*, and record dead ends so they
 - 2026-11-13 — Spacing: user-selectable 10/25/50 dropdown, default 25.
 - 2026-11-13 — ETA past the forecast range: checkpoint shows "No forecast" with a one-line reason, never Low.
 - 2026-11-13 — Miles per checkpoint: we only sample weather at checkpoints, and each mile of road takes the weather of its nearest checkpoint (midpoint to midpoint; the first and last checkpoints reach the route ends). The stretches sum exactly to the route length, and a test asserts this.
+- 2026-11-13 — UI adopts two industry patterns: side-by-side route comparison cards, and a trip summary that says *where* the risk is ("Severe for 18 mi between mile 140–158, ~2 h after departure"), not just totals.
+- 2026-11-13 — Extensions (road surface, NWS alerts, 7-day range, delay prediction) are not built and not mentioned in the Loom.
+- 2026-11-13 — No silent fallbacks: failures surface as clear errors, never quietly substituted data. Why: a fallback in the wrong place hides bugs and wrong data.
 - LATER — HOS rest breaks as an optional toggle, after the core is done.
-- LATER — Hosting: Open-Meteo rate-limits per IP, so we need caching plus a fallback (MET Norway or an API key). A VPS (own IP) is being considered; Hetzner is sold out.
+- LATER — Loom: mention WeatherOptics (the industry's white-label risk engine) once the core is built.
+- LATER — Hosting: Open-Meteo rate-limits per IP, so we need caching and either our own IP (VPS) or an Open-Meteo API key. A VPS is being considered; Hetzner is sold out.
 
 ## Tried & rejected / mistakes
 - _(none yet)_

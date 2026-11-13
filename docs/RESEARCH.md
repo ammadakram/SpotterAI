@@ -131,6 +131,23 @@ average, user-selectable 10/25/50 spacing. Only about one in ten adds optional H
 - Things they have that the brief doesn't ask for (out of scope; mention in the Loom as how you'd extend it): road surface state, NWS alert overlay (free at api.weather.gov), 7-day horizon, delay prediction.
 - WeatherOptics is the white-label risk engine behind Trimble, Platform Science, and the Motive/Samsara marketplaces.
 
+## 9. Claude skills evaluated (2026-11-13)
+
+Read in full or in large part. Stars are for the repo that holds the skill.
+
+| Skill | Repo ★ | Verdict |
+|---|---|---|
+| `codebase-design` (Matt Pocock) | 323k | **Use.** Short, principle-based: deep modules, pure core, "accept dependencies, return results". Exactly the shape the risk engine needs. |
+| `tdd` (Matt Pocock) | 323k | **Use, for the domain logic only.** Short. Good anti-pattern list (tautological tests, implementation-coupled tests). Agrees on the test seams before writing tests. |
+| `api-and-interface-design` (Addy Osmani) | 117k | **Use.** Contract-first endpoint design, one consistent error shape. Supports the no-silent-fallbacks rule. |
+| `unslop` (heydamir) | 15.5k | Already installed globally. A polish pass on built UI, not a build guide. |
+| `django-expert` (Jeffallan) | 12k | Skip. Built around models, ORM tuning and JWT auth. We have no database or auth, so it would push over-engineering. |
+| `architecture-designer` (Jeffallan), `architecture-patterns` (wshobson) | 12k / 42k | Skip. Clean/Hexagonal/DDD plus ADRs for everything is overkill for a single-endpoint app. DECISIONS.md already covers it. |
+| `python-anti-patterns` (wshobson) | 42k | Optional review checklist. Built-in review tools already cover it. |
+| superpowers (obra) | 317k | Skip. A full methodology framework that takes over the workflow; too heavy here. |
+
+Already available, no install needed: `/code-review`, `/simplify`, and the `silent-failure-hunter` review agent, which looks for exactly the swallowed errors and bad fallbacks we want to avoid.
+
 ## Sources
 - [HERE pricing](https://developer.here.com/pricing) · [HERE truck routing](https://docs.here.com/routing/docs/routing-v8-truck-routing) · [HERE vehicle properties](https://docs.here.com/routing/docs/routing-v8-vehicle-properties)
 - [ORS hosted API restrictions](https://giscience.github.io/openrouteservice/hosted-api-restrictions)

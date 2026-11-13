@@ -26,4 +26,6 @@ Run `/checkpoint`, which updates PROGRESS.md and DECISIONS.md. Keep both short â
 - Small, focused commits with clear messages; `main` stays deployable.
 - Never commit secrets â€” use `.env` (gitignored) and keep `.env.example` current.
 - Before calling a feature done: it runs locally, edge cases checked, and it would hold up in the Loom demo.
-- Prefer simple, readable solutions over clever ones; reviewers read this code.
+- Prefer simple, readable solutions over clever ones; reviewers read this code. Don't overcomplicate.
+- Reusable components and functions. Extract when something is used twice, not before.
+- **No unnecessary fallbacks.** Never silently substitute default or fallback data when something fails. Fail loudly with a clear error that reaches the UI. A silent fallback in the wrong place hides bugs.
