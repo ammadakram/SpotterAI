@@ -15,9 +15,12 @@ Phase: **Setup** → next: background research, then build.
 
 - All interpretation and stack questions answered (see DECISIONS.md). Skills installed in `.claude/skills/`.
 
+- Architecture drafted in `docs/ARCHITECTURE.md` (modules, `/api/plans` + `/api/places` contract, pipeline, errors, rendering strategy, tests).
+
 ## Next up
-1. Write `docs/ARCHITECTURE.md`: modules, the `/api/plan` contract, data flow, error handling, caching. Use the codebase-design and api-and-interface-design skills.
-2. Then the build plan (vertical slices). The first slice is the scaffold + CI workflow.
+1. User confirms the 4 PROPOSED points in ARCHITECTURE.md §5.
+2. Build plan (vertical slices). Slice 1: scaffold + CI + verify HERE duration params and Open-Meteo multi-location counting.
 
 ## Open questions
+- ARCHITECTURE.md §5 (no-forecast miles, no-safe-route screen, heatmap style, Tailwind).
 - Hosting (VPS vs Vercel + Render). Deferred.
