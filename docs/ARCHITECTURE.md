@@ -81,7 +81,7 @@ backend/
 Wire format is JSON with camelCase keys, enums in `UPPER_SNAKE`, times as ISO-8601 UTC, and coordinates as `[lon, lat]` (GeoJSON order).
 
 **`GET /api/places?q=dall`** → `200 { "places": [{ "label": "Dallas, TX, United States", "lon": -96.8, "lat": 32.78 }] }`
-HERE Autosuggest restricted to `countryCode:USA` (with `at` = centre of the US, which HERE requires). The form sends the chosen place's coordinates, so planning never has to geocode free text.
+HERE Autosuggest restricted to `countryCode:USA` (with `at` = centre of the US, which HERE requires) and `limit=5`, set by our server. The form sends the chosen place's coordinates, so planning never has to geocode free text.
 
 **`POST /api/plans`** (computes and stores nothing; `200`)
 
@@ -146,7 +146,7 @@ The response has **the same shape in every case**. "No safe route" is `recommend
 frontend/src/
   api/           client.ts (fetch wrapper → throws ApiError{code,message}), types.ts (mirrors the contract)
   features/
-    plan-form/   PlanForm, PlaceInput (debounced autosuggest), DepartureInput, LoadInput, SpacingSelect
+    plan-form/   PlanForm, PlaceInput (autosuggest: searches from the first character, 300 ms debounce, results cached by TanStack Query), DepartureInput, LoadInput, SpacingSelect
     routes/      RouteCards, RouteCard, TripSummary, NoSafeRoute
     map/         MapView, RoutesLayer, CheckpointsLayer, HeatmapLayer, CheckpointPopup
     forecast/    ForecastSlider (+ play), VariablePicker

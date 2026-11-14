@@ -33,6 +33,7 @@ One line each. Newest at the bottom. Include *why*, and record dead ends so they
 - 2026-11-13 — Skills vendored in `.claude/skills/`: codebase-design, tdd (Matt Pocock), api-and-interface-design (Addy Osmani).
 - 2026-11-14 — Weather cache: key = rounded location only (checkpoints to nearest 0.05°, grid cells = centre on fixed 0.25° lines), 30 min. Every location is fetched for one fixed range (now → +4 days). Why: the key holds no time, so a shorter per-trip range would give cache hits with missing hours (false NO_FORECAST). HERE routes are not cached (low hit rate). Errors are never cached.
 - 2026-11-14 — Corridor width (30 mi) and cell size (0.25°) are our choices, not from the brief. Why: wide enough to show weather approaching the route, small enough to keep ~250 cells for a 1,000-mile trip.
+- 2026-11-14 — Place search: starts from the first character (no minimum), 300 ms debounce, TanStack Query cache; server sends HERE `limit=5`. Why: user wants instant suggestions; the limit keeps the dropdown short and can't be raised by the client.
 - LATER (v2) — Progressive loading: send routes + checkpoints + ranking first, heatmap in a second request. Measure the v1 response time first; only do it if the wait is noticeable.
 - LATER — HOS rest breaks as an optional toggle, after the core is done.
 - LATER — Loom: mention WeatherOptics (the industry's white-label risk engine) once the core is built.
