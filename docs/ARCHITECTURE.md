@@ -69,7 +69,7 @@ backend/
    - checkpoints, snapped to 0.05° (~3 mi, close to the forecast model's resolution), and
    - grid cell centres.
 
-   Variables: `wind_speed_10m`, `wind_gusts_10m`, `rain`, `showers`, `snowfall`, in `mph` / `inch`, UTC. Requests are batched (many coordinates per request), run in parallel, and cached per location for 30 min.
+   Variables: `wind_speed_10m`, `wind_gusts_10m`, `rain`, `showers`, `snowfall`, in `mph` / `inch`, UTC. Every location is fetched for the same fixed range (now → +4 days), so a cached entry always covers any plan's hours (departure up to +48 h plus the trip). Requests are batched (many coordinates per request), run in parallel, and cached for 30 min. Cache key = the rounded location only: checkpoints rounded to the nearest 0.05°, grid cells by their centre on fixed 0.25° lines. Errors are never cached.
 6. **Pick the forecast hour.** Open-Meteo's rain and snow at hour T are the total for the hour *ending* at T. So a checkpoint reached at 9:45 uses the 10:00 value, the hour the truck is actually in. Wind uses the same slot.
 7. **Classify.** Each condition gets a level from the brief's table (each band starts at its lower bound). The checkpoint level is the worst of the three. Load rules escalate wind only, and the response flags when they did. If a needed value is missing, the checkpoint is `NO_FORECAST` with a reason, never Low.
 8. **Assess routes.** Miles per level (including `unknown`), a distance-weighted average (0–4), and the risk stretches with start and end times.
