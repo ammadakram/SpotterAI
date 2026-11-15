@@ -105,16 +105,27 @@ HERE Autosuggest restricted to `countryCode:USA` (with `at` = centre of the US, 
       "stretches": [{ "level": "HIGH", "fromMi": 140, "toMi": 158, "startsAt": "...", "endsAt": "..." }],
       "checkpoints": [{
           "mile": 25, "coordinates": [-97.1, 32.9], "eta": "...", "coversMi": [12.5, 37.5],
-          "risk": "HIGH", "isLoadEscalated": true,
+          "risk": "HIGH", "isLoadEscalated": false,
           "conditions": { "wind": "HIGH", "rain": "LOW", "snow": "LOW" },
           "weather": { "windMph": 38.2, "gustMph": 51.0, "rainInHr": 0.02, "snowInHr": 0 },
           "noForecastReason": null }] }],
   "ranking": { "orderedRouteIds": ["r2", "r1", "r3"], "recommendedRouteId": "r2",
                "decidedBy": "HIGH_MILES" },
-  "heatmap": { "startsAt": "...(now, top of hour)", "hours": 49, "cellSizeDeg": 0.25,
+  "heatmap": { "startsAt": "...(next full hour: the hour bucket that contains now)", "hours": 49, "cellSizeDeg": 0.25,
                "cells": [{ "center": [-97.0, 33.0],
                            "risk": [0, 0, 1, ...], "windMph": [...], "rainInHr": [...], "snowInHr": [...] }] } }
 ```
+
+`decidedBy` is the criterion that separated the recommended route from the second-best drivable route:
+
+| `decidedBy` | When |
+|---|---|
+| `SEVERE_MILES` | Fewer Severe miles than the runner-up |
+| `HIGH_MILES` | Tied on Severe miles, fewer High miles |
+| `AVERAGE_RISK` | Tied on both, lower average risk |
+| `DURATION` | Tied on all three, shorter travel time (also used for a full four-way tie, keeping HERE's order) |
+| `ONLY_DRIVABLE` | Only one route is drivable |
+| `null` | No route is drivable (`recommendedRouteId` is `null`) |
 
 The response has **the same shape in every case**. "No safe route" is `recommendedRouteId: null` with every route `isDrivable: false`, not a different payload. Human-readable sentences ("Severe for 18 mi…", "Chosen for fewer High miles: 10 vs 40") are built in the frontend from these structured fields.
 
@@ -168,13 +179,13 @@ frontend/src/
 
 ### Styling
 
-**PROPOSED: Tailwind CSS.** It gives a consistent spacing and colour scale, and works with the unslop polish pass.
+**Tailwind CSS.** It gives a consistent spacing and colour scale, and works with the unslop polish pass.
 
 ## 4. Testing
 
 | Where | Tool | What |
 |---|---|---|
-| `domain/` | pytest | Every band edge (24.9/25, 34.5, 54.9/55; rain 0.25 and exactly 1.00; snow 3.0 vs 3.01), load rules (30,000 vs 30,001 lb, 40,000 vs 40,001 lb), worst-of-three, checkpoint placement (destination included, short last gap), stretches summing to the route length, ETA interpolation, forecast-hour selection (9:45 → 10:00), ranking (No Travel excluded, each tie-break step, all blocked → null) |
+| `domain/` | pytest | Every band edge (24.9/25, 34.5, 54.9/55; rain 0.25 and exactly 1.00; snow 3.0 vs 3.01), load rules (30,000 vs 30,001 lb, 40,000 vs 40,001 lb), worst-of-three, checkpoint placement (destination included, short last gap), stretches summing to the route length, ETA interpolation, forecast-hour selection (9:45 → 10:00), ranking (No Travel excluded, each tie-break step and its `decidedBy` value incl. `ONLY_DRIVABLE`, all blocked → null) |
 | `service` + views | pytest + recorded JSON | Normal plan, validation errors, HERE failure → `ROUTING_UNAVAILABLE`, malformed weather → `WEATHER_UNAVAILABLE`, one consistent error shape. No network. |
 | `frontend/src/lib` | Vitest | Formatting, colour scale, heatmap GeoJSON builder |
 
@@ -182,8 +193,8 @@ CI: one GitHub Actions workflow runs ruff + pytest (backend), and ESLint + Vites
 
 ## 5. Open points
 
-1. **PROPOSED** — Checkpoints with `NO_FORECAST`: their miles count as `unknown`. Ranking uses the known miles, and the card shows "N mi without forecast". With a 48 h departure window and a 16-day forecast this should almost never happen.
-2. **PROPOSED** — "No safe route" screen: show the message and the corridor heatmap (it explains *why*), but no routes.
+1. **DECIDED** — Checkpoints with `NO_FORECAST`: their miles count as `unknown` and are left out of ranking (ranking and the average use the known miles). The UI shows them whenever `unknown > 0`, with no threshold: a small note on the route card ("Last 40 mi: no forecast") and grey checkpoint dots on the map. The dots need no backend change; they come from the checkpoint's `risk` through the normal colour scale. Rare: only when an ETA passes the 4-day fetch range or Open-Meteo has a gap.
+2. **DECIDED** — "No safe route" screen: show the message and the corridor heatmap (it explains *why*), but no routes. Frontend only; easy to change after seeing it.
 3. **PROPOSED** — Heatmap render style (heatmap layer vs filled cells): decide visually in the build.
-4. **PROPOSED** — Tailwind CSS.
+4. **DECIDED** — Tailwind CSS.
 5. To verify in the first slice: the exact HERE parameters for per-piece durations, and how Open-Meteo counts multi-location requests against the free limit. The docs don't say, so we measure it.
