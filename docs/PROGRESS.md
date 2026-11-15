@@ -3,7 +3,7 @@
 _Last updated: 2026-11-15_
 
 ## Status
-Phase: **Architecture confirmed by walkthrough** → next: build plan.
+Phase: **Architecture confirmed by walkthrough** → next: approve build plan, then Slice 1.
 
 ## Done
 - Claude context setup: CLAUDE.md, docs/ (PROGRESS, DECISIONS, ASSESSMENT), `/checkpoint` command.
@@ -14,8 +14,9 @@ Phase: **Architecture confirmed by walkthrough** → next: build plan.
 - Walkthrough fixes to ARCHITECTURE.md: `decidedBy` value list, `isLoadEscalated` example, heatmap `startsAt` = the hour bucket containing now, place-search debounce + `limit=5`.
 
 ## Next up
-1. Build plan (vertical slices). Slice 1: scaffold + CI + verify HERE per-piece duration params, the HERE alternatives limit, Open-Meteo multi-location counting and batch size.
+1. User approves `docs/PLAN.md` (6 vertical slices).
+2. Start Slice 1: scaffold + CI + verify HERE per-piece duration params, the HERE alternatives limit, Open-Meteo multi-location counting and batch size; record fixtures.
 
 ## Open questions
 - Open-Meteo batch size (plan ~100 locations/request; measure in slice 1).
-- Hosting (VPS vs Vercel + Render). Deferred.
+- Hosting (VPS vs Vercel + Render). Needed by Slice 3 (first deploy).
