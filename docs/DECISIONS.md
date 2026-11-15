@@ -38,6 +38,7 @@ One line each. Newest at the bottom. Include *why*, and record dead ends so they
 - 2026-11-15 — `decidedBy` values: SEVERE_MILES, HIGH_MILES, AVERAGE_RISK, DURATION, ONLY_DRIVABLE, or null. A full four-way tie keeps HERE's order and reports DURATION. Why: the frontend needs the full list to write the "why this route" sentence.
 - 2026-11-15 — NO_FORECAST miles: counted as `unknown`, left out of ranking; shown whenever > 0 (small route-card note + grey checkpoint dots). No threshold. Why: it's rare, and hiding small gaps behind a threshold would be a quiet omission; grey dots reuse checkpoint data, so no backend change.
 - 2026-11-15 — No-safe-route screen: message + corridor heatmap, no routes. Tailwind for styling.
+- 2026-11-15 — Heatmap style: filled squares, not MapLibre's heatmap layer. Why: risk is 5 discrete levels; a blended heatmap paints in-between colours that no cell has.
 - LATER (v2) — Progressive loading: send routes + checkpoints + ranking first, heatmap in a second request. Measure the v1 response time first; only do it if the wait is noticeable.
 - LATER — HOS rest breaks as an optional toggle, after the core is done.
 - LATER — Loom: mention WeatherOptics (the industry's white-label risk engine) once the core is built.

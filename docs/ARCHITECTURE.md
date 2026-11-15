@@ -1,6 +1,6 @@
 # Architecture
 
-_Drafted 2026-11-13. Built on the decisions in DECISIONS.md; items marked **PROPOSED** still need the user's confirmation._
+_Drafted 2026-11-13, confirmed 2026-11-15. Built on the decisions in DECISIONS.md._
 
 ## 1. Shape of the system
 
@@ -172,7 +172,7 @@ frontend/src/
 
 - **Everything on the map is a MapLibre layer (GPU), not React components.** Hundreds of checkpoints as DOM `<Marker>`s would stutter. As one `circle` layer they don't.
 - **Heatmap data is uploaded once.** `lib/heatmap.ts` turns cells into GeoJSON with flat properties `r0…r48`, `w0…w48`, `p0…p48`, `s0…s48`. Moving the slider only changes the paint expression (`['get', 'r12']`), so there's no data re-upload and no React re-render of the map.
-- **Rendering style: PROPOSED** MapLibre `heatmap` layer on the regular grid. Even spacing means colour tracks the value, not point density. Compare against filled grid cells during the build and keep whichever reads better.
+- **Rendering style: filled squares.** One `fill` layer, one polygon per cell, built in `lib/heatmap.ts` from `center` + `cellSizeDeg`. Not MapLibre's `heatmap` layer: it blends neighbours and paints in-between colours (looks like Moderate between Low and Severe) that no cell has.
 - The selected route is highlighted with a paint expression. Route geometry is simplified server-side.
 - Slider: native range input, with a play button that steps hours every ~400 ms. The time label shows clock time in the browser's zone ("Thu 14:00 CST").
 - Base map: OpenFreeMap "positron" (light, no API key), so the risk colours stand out.
@@ -195,6 +195,6 @@ CI: one GitHub Actions workflow runs ruff + pytest (backend), and ESLint + Vites
 
 1. **DECIDED** — Checkpoints with `NO_FORECAST`: their miles count as `unknown` and are left out of ranking (ranking and the average use the known miles). The UI shows them whenever `unknown > 0`, with no threshold: a small note on the route card ("Last 40 mi: no forecast") and grey checkpoint dots on the map. The dots need no backend change; they come from the checkpoint's `risk` through the normal colour scale. Rare: only when an ETA passes the 4-day fetch range or Open-Meteo has a gap.
 2. **DECIDED** — "No safe route" screen: show the message and the corridor heatmap (it explains *why*), but no routes. Frontend only; easy to change after seeing it.
-3. **PROPOSED** — Heatmap render style (heatmap layer vs filled cells): decide visually in the build.
+3. **DECIDED** — Heatmap render style: filled squares (one `fill` polygon per 0.25° cell, coloured by its own value).
 4. **DECIDED** — Tailwind CSS.
 5. To verify in the first slice: the exact HERE parameters for per-piece durations, and how Open-Meteo counts multi-location requests against the free limit. The docs don't say, so we measure it.
