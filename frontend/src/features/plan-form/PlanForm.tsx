@@ -73,36 +73,40 @@ export function PlanForm({ isSubmitting, onSubmit }: Props) {
           <label htmlFor="load" className="mb-1 block text-sm font-medium text-slate-700">
             Load (lb)
           </label>
+          {/* A text field, not type="number": no spinner arrows, and digits only. */}
           <input
             id="load"
-            type="number"
+            type="text"
             inputMode="numeric"
-            min={0}
-            max={MAX_LOAD_LB}
-            step={1000}
             placeholder="e.g. 32000"
             className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm"
             value={load}
-            onChange={(event) => setLoad(event.target.value)}
+            onChange={(event) => setLoad(event.target.value.replace(/\D/g, ''))}
           />
         </div>
-        <div className="flex-1">
-          <label htmlFor="spacing" className="mb-1 block text-sm font-medium text-slate-700">
+        <fieldset className="flex-1">
+          <legend className="mb-1 block text-sm font-medium text-slate-700">
             Checkpoint every
-          </label>
-          <select
-            id="spacing"
-            className="w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm"
-            value={spacingMi}
-            onChange={(event) => setSpacingMi(Number(event.target.value))}
-          >
+          </legend>
+          <div className="flex rounded-md border border-slate-300 p-0.5">
             {SPACINGS_MI.map((mi) => (
-              <option key={mi} value={mi}>
+              <label
+                key={mi}
+                className="flex-1 cursor-pointer rounded px-1 py-1.5 text-center whitespace-nowrap text-sm text-slate-600 has-checked:bg-slate-900 has-checked:text-white has-focus-visible:ring-2 has-focus-visible:ring-slate-400"
+              >
+                <input
+                  type="radio"
+                  name="spacing"
+                  value={mi}
+                  checked={spacingMi === mi}
+                  onChange={() => setSpacingMi(mi)}
+                  className="sr-only"
+                />
                 {mi} mi
-              </option>
+              </label>
             ))}
-          </select>
-        </div>
+          </div>
+        </fieldset>
       </div>
 
       {problem && <p className="text-sm text-red-700">{problem}</p>}

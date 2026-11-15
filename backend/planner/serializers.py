@@ -5,7 +5,8 @@ from datetime import UTC, datetime, timedelta
 from rest_framework import serializers
 
 from planner.domain.geometry import METERS_PER_MILE
-from planner.service import Plan, PlanRequest
+from planner.domain.types import RatedCheckpoint, RiskLevel
+from planner.service import Plan, PlannedRoute, PlanRequest
 
 MAX_LOAD_LB = 45_000
 MAX_DEPARTURE_AHEAD = timedelta(hours=48)
@@ -46,29 +47,78 @@ class PlanRequestSerializer(serializers.Serializer):
         )
 
 
+# Wire names for the risk-mile buckets; NO_FORECAST miles are "unknown".
+RISK_MILES_KEYS = {
+    RiskLevel.LOW: "low",
+    RiskLevel.MODERATE: "moderate",
+    RiskLevel.HIGH: "high",
+    RiskLevel.SEVERE: "severe",
+    RiskLevel.NO_TRAVEL: "noTravel",
+    RiskLevel.NO_FORECAST: "unknown",
+}
+
+
 def plan_to_json(plan: Plan) -> dict:
     return {
         "generatedAt": _time(plan.generated_at),
-        "routes": [
+        "routes": [_route_json(planned) for planned in plan.routes],
+        "ranking": {
+            "orderedRouteIds": plan.ranking.ordered_route_ids,
+            "recommendedRouteId": plan.ranking.recommended_route_id,
+            "decidedBy": plan.ranking.decided_by,
+        },
+    }
+
+
+def _route_json(planned: PlannedRoute) -> dict:
+    assessment = planned.assessment
+    return {
+        "id": planned.id,
+        "label": planned.label,
+        "geometry": [_coordinates(p) for p in planned.route.points],
+        "distanceMi": _miles(planned.route.distance_m / METERS_PER_MILE),
+        "durationS": round(planned.route.duration_s),
+        "arrivalAt": _time(planned.arrival),
+        "isDrivable": assessment.is_drivable,
+        "riskMiles": {
+            key: _miles(assessment.risk_miles[level]) for level, key in RISK_MILES_KEYS.items()
+        },
+        "averageRisk": round(assessment.average_risk, 2),
+        "stretches": [
             {
-                "id": planned.id,
-                "label": planned.label,
-                "geometry": [_coordinates(p) for p in planned.route.points],
-                "distanceMi": _miles(planned.route.distance_m / METERS_PER_MILE),
-                "durationS": round(planned.route.duration_s),
-                "arrivalAt": _time(planned.arrival),
-                "checkpoints": [
-                    {
-                        "mile": _miles(c.mile),
-                        "coordinates": _coordinates(c.coordinates),
-                        "eta": _time(c.eta),
-                        "coversMi": [_miles(c.covers_mi[0]), _miles(c.covers_mi[1])],
-                    }
-                    for c in planned.checkpoints
-                ],
+                "level": s.level,
+                "fromMi": _miles(s.from_mi),
+                "toMi": _miles(s.to_mi),
+                "startsAt": _time(s.starts_at),
+                "endsAt": _time(s.ends_at),
             }
-            for planned in plan.routes
+            for s in assessment.stretches
         ],
+        "checkpoints": [_checkpoint_json(rated) for rated in planned.checkpoints],
+    }
+
+
+def _checkpoint_json(rated: RatedCheckpoint) -> dict:
+    c, risk, weather = rated.checkpoint, rated.risk, rated.weather
+    return {
+        "mile": _miles(c.mile),
+        "coordinates": _coordinates(c.coordinates),
+        "eta": _time(c.eta),
+        "coversMi": [_miles(c.covers_mi[0]), _miles(c.covers_mi[1])],
+        "risk": risk.level,
+        "isLoadEscalated": risk.is_load_escalated,
+        "conditions": None
+        if risk.level == RiskLevel.NO_FORECAST
+        else {"wind": risk.wind, "rain": risk.rain, "snow": risk.snow},
+        "weather": None
+        if weather is None
+        else {
+            "windMph": weather.wind_mph,
+            "gustMph": weather.gust_mph,
+            "rainInHr": round(weather.rain_in_hr, 3),
+            "snowInHr": weather.snow_in_hr,
+        },
+        "noForecastReason": risk.no_forecast_reason,
     }
 
 

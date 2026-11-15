@@ -1,20 +1,16 @@
-import json
 from datetime import UTC, datetime
-from pathlib import Path
 
 import httpx
 import pytest
+from django.core.cache import cache
 
 from planner import views
 from planner.clients.here import HereClient
+from planner.clients.open_meteo import OpenMeteoClient
+from planner.tests.fakes import FakeOpenMeteo, load_fixture
 
-FIXTURES = Path(__file__).parent.parent / "fixtures"
 # Two hours before the departure the routes fixture was recorded for.
 NOW = datetime(2026, 11, 16, 12, 0, tzinfo=UTC)
-
-
-def load_fixture(name: str) -> dict:
-    return json.loads((FIXTURES / name).read_text())
 
 
 class FakeHere:
@@ -45,4 +41,35 @@ def fake_here(monkeypatch):
     http = httpx.Client(transport=httpx.MockTransport(fake.handle))
     monkeypatch.setattr(views, "here_client", lambda: HereClient("test-key", http))
     monkeypatch.setattr(views, "now", lambda: NOW)
+    return fake
+
+
+def set_weather(fake: FakeOpenMeteo, *, wind_mph: float, rain_in_hr: float = 0.0) -> None:
+    """Make every hour at every place the same weather."""
+
+    def edit(place: dict) -> None:
+        hourly = place["hourly"]
+        hours = len(hourly["time"])
+        hourly.update(
+            wind_speed_10m=[wind_mph] * hours,
+            wind_gusts_10m=[wind_mph + 10] * hours,
+            rain=[rain_in_hr] * hours,
+            showers=[0.0] * hours,
+            snowfall=[0.0] * hours,
+        )
+
+    fake.edit = edit
+
+
+@pytest.fixture(autouse=True)
+def fake_weather(monkeypatch):
+    """Calm weather everywhere unless a test changes it."""
+    cache.clear()
+    fake = FakeOpenMeteo()
+    set_weather(fake, wind_mph=5)
+    http = httpx.Client(transport=httpx.MockTransport(fake.handle))
+    weather = OpenMeteoClient(
+        http, base_url="https://api.open-meteo.com", api_key=None, cache=cache
+    )
+    monkeypatch.setattr(views, "weather_client", lambda: weather)
     return fake

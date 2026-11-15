@@ -43,6 +43,10 @@ def place_checkpoints(route: Route, spacing_mi: float, departure: datetime) -> l
 
     # Each checkpoint covers the road halfway to the previous and the next one.
     bounds = [0.0] + [(a + b) / 2 for a, b in zip(miles, miles[1:], strict=False)] + [total_mi]
+
+    def time_at(mile: float) -> datetime:
+        return departure + timedelta(seconds=locate(mile)[1])
+
     checkpoints = []
     for i, m in enumerate(miles):
         coordinates, seconds = locate(m)
@@ -52,6 +56,7 @@ def place_checkpoints(route: Route, spacing_mi: float, departure: datetime) -> l
                 coordinates=coordinates,
                 eta=departure + timedelta(seconds=seconds),
                 covers_mi=(bounds[i], bounds[i + 1]),
+                covers_time=(time_at(bounds[i]), time_at(bounds[i + 1])),
             )
         )
     return checkpoints

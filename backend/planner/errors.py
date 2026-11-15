@@ -31,6 +31,11 @@ class RoutingUnavailable(AppError):
     status = 502
 
 
+class WeatherUnavailable(AppError):
+    code = "WEATHER_UNAVAILABLE"
+    status = 502
+
+
 def api_exception_handler(exc: Exception, context: dict) -> Response:
     """DRF exception handler: every error leaves the API in the same shape."""
     # DRF's default handler converts these two Django exceptions; ours must too.

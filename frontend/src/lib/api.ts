@@ -4,11 +4,36 @@ export type LonLat = [number, number]
 
 export type Place = { label: string; lon: number; lat: number }
 
+export type RiskLevel = 'LOW' | 'MODERATE' | 'HIGH' | 'SEVERE' | 'NO_TRAVEL' | 'NO_FORECAST'
+
 export type Checkpoint = {
   mile: number
   coordinates: LonLat
   eta: string
   coversMi: [number, number]
+  risk: RiskLevel
+  isLoadEscalated: boolean
+  /** null when there is no forecast for the checkpoint's hour */
+  conditions: { wind: RiskLevel; rain: RiskLevel; snow: RiskLevel } | null
+  weather: { windMph: number; gustMph: number | null; rainInHr: number; snowInHr: number } | null
+  noForecastReason: string | null
+}
+
+export type Stretch = {
+  level: RiskLevel
+  fromMi: number
+  toMi: number
+  startsAt: string
+  endsAt: string
+}
+
+export type RiskMiles = {
+  low: number
+  moderate: number
+  high: number
+  severe: number
+  noTravel: number
+  unknown: number
 }
 
 export type PlannedRoute = {
@@ -18,10 +43,23 @@ export type PlannedRoute = {
   distanceMi: number
   durationS: number
   arrivalAt: string
+  isDrivable: boolean
+  riskMiles: RiskMiles
+  averageRisk: number
+  stretches: Stretch[]
   checkpoints: Checkpoint[]
 }
 
-export type Plan = { generatedAt: string; routes: PlannedRoute[] }
+export type DecidedBy =
+  'SEVERE_MILES' | 'HIGH_MILES' | 'AVERAGE_RISK' | 'DURATION' | 'ONLY_DRIVABLE'
+
+export type Ranking = {
+  orderedRouteIds: string[]
+  recommendedRouteId: string | null
+  decidedBy: DecidedBy | null
+}
+
+export type Plan = { generatedAt: string; routes: PlannedRoute[]; ranking: Ranking }
 
 export type PlanRequest = {
   origin: Place

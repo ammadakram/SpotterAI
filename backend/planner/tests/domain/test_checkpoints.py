@@ -103,3 +103,13 @@ def test_a_zero_length_last_piece_still_reaches_the_destination():
 
     assert checkpoints[-1].eta == DEPARTURE + timedelta(seconds=3630)
     assert checkpoints[-1].coordinates == pytest.approx((1.0, 0.0))
+
+
+def test_each_checkpoint_knows_when_the_truck_enters_and_leaves_its_stretch():
+    # 60 mi in 60 min: covers [0–12.5], [12.5–37.5], [37.5–55], [55–60].
+    checkpoints = place_checkpoints(route_of((60, 60)), spacing_mi=25, departure=DEPARTURE)
+
+    minutes = [
+        (moment - DEPARTURE) / timedelta(minutes=1) for c in checkpoints for moment in c.covers_time
+    ]
+    assert minutes == pytest.approx([0, 12.5, 12.5, 37.5, 37.5, 55, 55, 60])

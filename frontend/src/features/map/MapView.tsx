@@ -2,10 +2,13 @@ import { setWorkerUrl, type ExpressionSpecification } from 'maplibre-gl'
 import maplibreWorkerUrl from 'maplibre-gl/dist/maplibre-gl-worker.mjs?url'
 import type { FeatureCollection } from 'geojson'
 import 'maplibre-gl/dist/maplibre-gl.css'
-import { useEffect, useMemo, useRef } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import Map, { Layer, Source, type MapLayerMouseEvent, type MapRef } from 'react-map-gl/maplibre'
-import type { Plan } from '../../lib/api'
+import type { Checkpoint, PlannedRoute } from '../../lib/api'
 import { boundsOf } from '../../lib/geo'
+import { RISK_COLOURS } from '../../lib/risk'
+import { CheckpointPopup } from './CheckpointPopup'
+import { RiskLegend } from './RiskLegend'
 
 // MapLibre looks for its worker next to its own module, which Vite moves when bundling.
 // Pointing it at the file explicitly works the same in dev and in the production build.
@@ -20,31 +23,65 @@ const INITIAL_VIEW = { longitude: -98.5, latitude: 39.5, zoom: 3.6 }
 const SELECTED_COLOUR = '#2563eb'
 const OTHER_COLOUR = '#94a3b8'
 
+// Open-Meteo's licence (CC BY 4.0) requires the credit.
+const ATTRIBUTION = 'Weather: <a href="https://open-meteo.com/">Open-Meteo</a>'
+
+const CHECKPOINT_COLOUR: ExpressionSpecification = [
+  'match',
+  ['get', 'risk'],
+  'LOW',
+  RISK_COLOURS.LOW,
+  'MODERATE',
+  RISK_COLOURS.MODERATE,
+  'HIGH',
+  RISK_COLOURS.HIGH,
+  'SEVERE',
+  RISK_COLOURS.SEVERE,
+  'NO_TRAVEL',
+  RISK_COLOURS.NO_TRAVEL,
+  'NO_FORECAST',
+  RISK_COLOURS.NO_FORECAST,
+  '#ff00ff', // a level this list doesn't know: loud magenta, never a real risk colour
+]
+
 type Props = {
-  plan: Plan | undefined
+  routes: PlannedRoute[]
   selectedRouteId: string | null
   onSelectRoute: (routeId: string) => void
 }
 
-export function MapView({ plan, selectedRouteId, onSelectRoute }: Props) {
+export function MapView({ routes, selectedRouteId, onSelectRoute }: Props) {
   const mapRef = useRef<MapRef>(null)
+  // Remember which routes the popup belongs to, so it disappears when a new plan arrives.
+  const [popup, setPopup] = useState<{ routes: PlannedRoute[]; checkpoint: Checkpoint } | null>(
+    null,
+  )
+  const openCheckpoint = popup?.routes === routes ? popup.checkpoint : null
+  const [isPointing, setIsPointing] = useState(false)
 
   // Built once per plan. Selecting a route changes only paint and filter expressions below,
   // so MapLibre never re-uploads the geometry.
-  const routes = useMemo(() => routesGeoJson(plan), [plan])
-  const checkpoints = useMemo(() => checkpointsGeoJson(plan), [plan])
+  const routeLines = useMemo(() => routesGeoJson(routes), [routes])
+  const checkpoints = useMemo(() => checkpointsGeoJson(routes), [routes])
 
   useEffect(() => {
-    if (!plan) return
-    const bounds = boundsOf(plan.routes.flatMap((route) => route.geometry))
+    if (routes.length === 0) return
+    const bounds = boundsOf(routes.flatMap((route) => route.geometry))
     mapRef.current?.fitBounds(bounds, { padding: 60, duration: 800 })
-  }, [plan])
+  }, [routes])
 
   const isSelected: ExpressionSpecification = ['==', ['get', 'id'], selectedRouteId ?? '']
 
   function onClick(event: MapLayerMouseEvent) {
-    const routeId = event.features?.[0]?.properties?.id
-    if (typeof routeId === 'string') onSelectRoute(routeId)
+    const feature = event.features?.[0]
+    if (!feature) return setPopup(null)
+    if (feature.layer.id === 'checkpoints') {
+      const { routeId, index } = feature.properties
+      const checkpoint = routes.find((r) => r.id === routeId)?.checkpoints[index]
+      setPopup(checkpoint ? { routes, checkpoint } : null)
+    } else {
+      onSelectRoute(feature.properties.id)
+    }
   }
 
   return (
@@ -52,11 +89,14 @@ export function MapView({ plan, selectedRouteId, onSelectRoute }: Props) {
       ref={mapRef}
       initialViewState={INITIAL_VIEW}
       mapStyle={BASE_MAP_STYLE}
-      interactiveLayerIds={['routes']}
+      interactiveLayerIds={['checkpoints', 'routes']}
       onClick={onClick}
-      cursor="auto"
+      onMouseEnter={() => setIsPointing(true)}
+      onMouseLeave={() => setIsPointing(false)}
+      cursor={isPointing ? 'pointer' : 'grab'}
+      attributionControl={{ customAttribution: ATTRIBUTION }}
     >
-      <Source id="routes" type="geojson" data={routes}>
+      <Source id="routes" type="geojson" data={routeLines}>
         <Layer
           id="routes"
           type="line"
@@ -77,21 +117,25 @@ export function MapView({ plan, selectedRouteId, onSelectRoute }: Props) {
           type="circle"
           filter={['==', ['get', 'routeId'], selectedRouteId ?? '']}
           paint={{
-            'circle-radius': 4,
-            'circle-color': '#ffffff',
-            'circle-stroke-color': '#1e293b',
+            'circle-radius': 5,
+            'circle-color': CHECKPOINT_COLOUR,
+            'circle-stroke-color': '#ffffff',
             'circle-stroke-width': 1.5,
           }}
         />
       </Source>
+      {openCheckpoint && (
+        <CheckpointPopup checkpoint={openCheckpoint} onClose={() => setPopup(null)} />
+      )}
+      <RiskLegend />
     </Map>
   )
 }
 
-function routesGeoJson(plan: Plan | undefined): FeatureCollection {
+function routesGeoJson(routes: PlannedRoute[]): FeatureCollection {
   return {
     type: 'FeatureCollection',
-    features: (plan?.routes ?? []).map((route) => ({
+    features: routes.map((route) => ({
       type: 'Feature',
       properties: { id: route.id },
       geometry: { type: 'LineString', coordinates: route.geometry },
@@ -99,13 +143,13 @@ function routesGeoJson(plan: Plan | undefined): FeatureCollection {
   }
 }
 
-function checkpointsGeoJson(plan: Plan | undefined): FeatureCollection {
+function checkpointsGeoJson(routes: PlannedRoute[]): FeatureCollection {
   return {
     type: 'FeatureCollection',
-    features: (plan?.routes ?? []).flatMap((route) =>
-      route.checkpoints.map((checkpoint) => ({
+    features: routes.flatMap((route) =>
+      route.checkpoints.map((checkpoint, index) => ({
         type: 'Feature' as const,
-        properties: { routeId: route.id, mile: checkpoint.mile },
+        properties: { routeId: route.id, index, risk: checkpoint.risk },
         geometry: { type: 'Point' as const, coordinates: checkpoint.coordinates },
       })),
     ),

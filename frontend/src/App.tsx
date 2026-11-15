@@ -1,17 +1,22 @@
 import { useMutation } from '@tanstack/react-query'
 import { useState } from 'react'
-import { createPlan } from './lib/api'
+import { createPlan, type PlannedRoute } from './lib/api'
 import { MapView } from './features/map/MapView'
 import { PlanForm } from './features/plan-form/PlanForm'
+import { Recommendation } from './features/routes/Recommendation'
 import { RouteList } from './features/routes/RouteList'
+
+const NO_ROUTES: PlannedRoute[] = []
 
 export default function App() {
   const [selectedRouteId, setSelectedRouteId] = useState<string | null>(null)
   const planning = useMutation({
     mutationFn: createPlan,
-    onSuccess: (plan) => setSelectedRouteId(plan.routes[0]?.id ?? null),
+    onSuccess: (plan) => setSelectedRouteId(plan.ranking.recommendedRouteId),
   })
   const plan = planning.data
+  // With no safe route there is nothing to drive, so no route is drawn or listed.
+  const hasSafeRoute = Boolean(plan?.ranking.recommendedRouteId)
 
   return (
     <div className="flex h-screen">
@@ -26,16 +31,17 @@ export default function App() {
             {planning.error.message}
           </p>
         )}
-        {plan && (
-          <RouteList
-            routes={plan.routes}
-            selectedRouteId={selectedRouteId}
-            onSelect={setSelectedRouteId}
-          />
+        {plan && <Recommendation plan={plan} />}
+        {plan && hasSafeRoute && (
+          <RouteList plan={plan} selectedRouteId={selectedRouteId} onSelect={setSelectedRouteId} />
         )}
       </aside>
-      <main className="flex-1">
-        <MapView plan={plan} selectedRouteId={selectedRouteId} onSelectRoute={setSelectedRouteId} />
+      <main className="relative flex-1">
+        <MapView
+          routes={plan && hasSafeRoute ? plan.routes : NO_ROUTES}
+          selectedRouteId={selectedRouteId}
+          onSelectRoute={setSelectedRouteId}
+        />
       </main>
     </div>
   )

@@ -1,7 +1,8 @@
 import httpx
 import pytest
 
-from planner.tests.api.conftest import load_fixture
+from planner.tests.api.conftest import set_weather
+from planner.tests.fakes import load_fixture
 
 DALLAS = {"label": "Dallas, TX, United States", "lon": -96.8, "lat": 32.78}
 DENVER = {"label": "Denver, CO, United States", "lon": -104.99, "lat": 39.74}
@@ -38,8 +39,84 @@ def test_plan_returns_three_routes_with_checkpoints(client, fake_here):
         "coordinates": pytest.approx([-97.1909, 32.8386], abs=1e-4),
         "eta": "2026-11-16T14:31:27Z",
         "coversMi": [12.5, 37.5],
+        "risk": "LOW",
+        "isLoadEscalated": False,
+        "conditions": {"wind": "LOW", "rain": "LOW", "snow": "LOW"},
+        "weather": {"windMph": 5.0, "gustMph": 15.0, "rainInHr": 0.0, "snowInHr": 0.0},
+        "noForecastReason": None,
     }
     assert first["checkpoints"][-1]["coversMi"] == [786.3, 797.6]
+
+
+def test_calm_weather_everywhere_recommends_the_quickest_route(client, fake_here):
+    plan = client.post("/api/plans", plan_body(), content_type="application/json").json()
+
+    first = plan["routes"][0]
+    assert first["isDrivable"] is True
+    assert first["riskMiles"] == {
+        "low": 797.6,
+        "moderate": 0,
+        "high": 0,
+        "severe": 0,
+        "noTravel": 0,
+        "unknown": 0,
+    }
+    assert first["averageRisk"] == 0
+    assert first["stretches"] == [
+        {
+            "level": "LOW",
+            "fromMi": 0,
+            "toMi": 797.6,
+            "startsAt": "2026-11-16T14:00:00Z",
+            "endsAt": "2026-11-17T02:15:09Z",
+        }
+    ]
+    # Durations: r1 44,109 s, r3 44,309 s, r2 45,181 s.
+    assert plan["ranking"] == {
+        "orderedRouteIds": ["r1", "r3", "r2"],
+        "recommendedRouteId": "r1",
+        "decidedBy": "DURATION",
+    }
+
+
+def test_heavy_load_in_high_wind_makes_every_mile_severe(client, fake_here, fake_weather):
+    set_weather(fake_weather, wind_mph=40)
+
+    plan = client.post(
+        "/api/plans", plan_body(loadLb=45000), content_type="application/json"
+    ).json()
+
+    checkpoint = plan["routes"][0]["checkpoints"][3]
+    assert checkpoint["risk"] == "SEVERE"
+    assert checkpoint["isLoadEscalated"] is True
+    assert [r["riskMiles"]["severe"] for r in plan["routes"]] == [797.6, 882.3, 786.8]
+    # Fewest severe miles: the shortest route, r3.
+    assert plan["ranking"]["orderedRouteIds"] == ["r3", "r1", "r2"]
+    assert plan["ranking"]["decidedBy"] == "SEVERE_MILES"
+
+
+def test_no_drivable_route_is_still_a_normal_answer(client, fake_here, fake_weather):
+    set_weather(fake_weather, wind_mph=50)  # Severe wind + 32,000 lb (> 30,000) = No Travel
+
+    response = client.post("/api/plans", plan_body(), content_type="application/json")
+
+    assert response.status_code == 200
+    plan = response.json()
+    assert [r["isDrivable"] for r in plan["routes"]] == [False, False, False]
+    assert plan["ranking"] == {"orderedRouteIds": [], "recommendedRouteId": None, "decidedBy": None}
+
+
+def test_weather_failure_is_502_weather_unavailable(client, fake_here, fake_weather):
+    fake_weather.failure = httpx.Response(503)
+
+    response = client.post("/api/plans", plan_body(), content_type="application/json")
+
+    assert response.status_code == 502
+    assert response.json()["error"] == {
+        "code": "WEATHER_UNAVAILABLE",
+        "message": "Weather data is unavailable right now.",
+        "details": {},
+    }
 
 
 def test_plan_asks_here_for_a_truck_with_the_loaded_weight(client, fake_here):
@@ -140,3 +217,15 @@ def test_here_failure_is_502_routing_unavailable(client, fake_here, here_answer)
     assert error["code"] == "ROUTING_UNAVAILABLE"
     assert error["message"] == "Truck routing is unavailable right now."
     assert "test-key" not in response.content.decode()
+
+
+def test_weather_without_any_usable_value_is_502_not_a_crash(client, fake_here, fake_weather):
+    def no_snow(place):
+        place["hourly"]["snowfall"] = [None] * len(place["hourly"]["time"])
+
+    fake_weather.edit = no_snow
+
+    response = client.post("/api/plans", plan_body(), content_type="application/json")
+
+    assert response.status_code == 502
+    assert response.json()["error"]["code"] == "WEATHER_UNAVAILABLE"

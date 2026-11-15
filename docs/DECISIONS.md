@@ -48,6 +48,14 @@ One line each. Newest at the bottom. Include *why*, and record dead ends so they
 - 2026-11-16 — API tests fake HERE at the HTTP level (`httpx.MockTransport` serving recorded JSON), not with a fake client object. Why: the tests then also cover our request params (gross weight, limit=5) and parsing.
 - 2026-11-16 — Place-search failures use ROUTING_UNAVAILABLE (502) with their own message; no extra error code. Why: same provider (HERE), and the UI only shows the message.
 - LATER (Slice 5) — Simplify route geometry for display (now ~8,800 points per route, response ~550 KB), as ARCHITECTURE.md specifies.
+- 2026-11-16 — Rain = Open-Meteo `rain` + `showers` (user confirmed). Gusts are display-only, so a missing gust doesn't make a checkpoint NO_FORECAST.
+- 2026-11-16 — `isLoadEscalated` is true only when the load rule changed the checkpoint's final level. Why: if rain is already Severe, the load changed nothing the driver sees.
+- 2026-11-16 — Stretches cover the whole route (Low included) and sum to its length. Route card = one summary line (No travel / Severe / High miles, Avg, No forecast) + the coloured risk strip; no per-stretch text. Why (user): stretch details repeat what the map shows and confused the card.
+- 2026-11-16 — Ranking compares miles rounded to 0.1 and the average to 0.01, the precision shown. Why: float noise must not decide a winner on a difference nobody can see.
+- 2026-11-16 — A route with no usable forecast at all → 502 WEATHER_UNAVAILABLE, not a plan of grey dots. Weather values that are NaN, infinite or negative are rejected.
+- 2026-11-16 — Checkpoint spacing is a 3-button toggle, not a native select (user: the native popup covered the field). Load is a digits-only text field (no spinner).
+- 2026-11-16 — Hosting: Vercel (frontend) + Render or Railway (backend), switch later if the APIs cause trouble. Run one gunicorn worker with threads so the in-memory weather cache is shared.
+- 2026-11-16 — Kept: unknown (no-forecast) miles stay out of ranking. Known limit: a long trip leaving at +48 h can run past the 4-day forecast, and a mostly-unknown route could then win on average risk. User chose not to add a rule the brief doesn't give. Mention in the Loom.
 - LATER (v2) — Progressive loading: send routes + checkpoints + ranking first, heatmap in a second request. Measure the v1 response time first; only do it if the wait is noticeable.
 - LATER — HOS rest breaks as an optional toggle, after the core is done.
 - LATER — Loom: mention WeatherOptics (the industry's white-label risk engine) once the core is built.

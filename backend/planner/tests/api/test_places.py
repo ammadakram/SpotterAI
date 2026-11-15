@@ -1,6 +1,6 @@
 import httpx
 
-from planner.tests.api.conftest import load_fixture
+from planner.tests.fakes import load_fixture
 
 
 def test_places_returns_label_and_coordinates(client, fake_here):
