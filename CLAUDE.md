@@ -28,7 +28,7 @@ Run `/checkpoint`, which updates PROGRESS.md and DECISIONS.md. Keep both short â
 - Before calling a feature done: it runs locally, edge cases checked, and it would hold up in the Loom demo.
 - Prefer simple, readable solutions over clever ones; reviewers read this code. Don't overcomplicate.
 - Reusable components and functions. Extract when something is used twice, not before.
-- **Testing:** pytest for the risk logic (most tests) and for the API layer, with routing and weather stubbed by recorded JSON fixtures (no network in tests). Vitest for pure frontend helpers only. No component or browser (Playwright) tests. Lint with ruff, and with ESLint + Prettier.
+- **Testing:** pytest for the risk logic (most tests) and for the API layer, with routing and weather stubbed by recorded JSON fixtures (no network in tests). Vitest for pure frontend helpers only. No component or browser (Playwright) tests. Lint with ruff, and with oxlint + Prettier.
 - **No unnecessary fallbacks.** Never silently substitute default or fallback data when something fails. Fail loudly with a clear error that reaches the UI. A silent fallback in the wrong place hides bugs.
 
 ## Skills (in `.claude/skills/`)

@@ -28,7 +28,7 @@ One line each. Newest at the bottom. Include *why*, and record dead ends so they
 - 2026-11-13 — US only.
 - 2026-11-13 — Time: input and display in the browser's time zone with an abbreviation label; UTC internally.
 - 2026-11-13 — Frontend: React + Vite + TypeScript. No database; Django in-process cache only.
-- 2026-11-13 — Testing: pytest (risk logic + API with recorded fixtures), Vitest (pure helpers). No Playwright/component tests. Linting: ruff, ESLint + Prettier.
+- 2026-11-13 — Testing: pytest (risk logic + API with recorded fixtures), Vitest (pure helpers). No Playwright/component tests. Linting: ruff, oxlint + Prettier (see 2026-11-15).
 - 2026-11-13 — CI: one GitHub Actions workflow (lint, test, build), added with the project scaffold. No CD for now.
 - 2026-11-13 — Skills vendored in `.claude/skills/`: codebase-design, tdd (Matt Pocock), api-and-interface-design (Addy Osmani).
 - 2026-11-14 — Weather cache: key = rounded location only (checkpoints to nearest 0.05°, grid cells = centre on fixed 0.25° lines), 30 min. Every location is fetched for one fixed range (now → +4 days). Why: the key holds no time, so a shorter per-trip range would give cache hits with missing hours (false NO_FORECAST). HERE routes are not cached (low hit rate). Errors are never cached.
@@ -39,6 +39,8 @@ One line each. Newest at the bottom. Include *why*, and record dead ends so they
 - 2026-11-15 — NO_FORECAST miles: counted as `unknown`, left out of ranking; shown whenever > 0 (small route-card note + grey checkpoint dots). No threshold. Why: it's rare, and hiding small gaps behind a threshold would be a quiet omission; grey dots reuse checkpoint data, so no backend change.
 - 2026-11-15 — No-safe-route screen: message + corridor heatmap, no routes. Tailwind for styling.
 - 2026-11-15 — Heatmap style: filled squares, not MapLibre's heatmap layer. Why: risk is 5 discrete levels; a blended heatmap paints in-between colours that no cell has.
+- 2026-11-15 — Frontend lint: oxlint (the current Vite template's default) + Prettier, not ESLint. Why: typescript-eslint supports TypeScript < 6.1 and the template ships TypeScript 7.
+- 2026-11-15 — Python tooling: uv (pyproject + uv.lock), no package build. Django with no database apps (no admin/auth/sessions).
 - LATER (v2) — Progressive loading: send routes + checkpoints + ranking first, heatmap in a second request. Measure the v1 response time first; only do it if the wait is noticeable.
 - LATER — HOS rest breaks as an optional toggle, after the core is done.
 - LATER — Loom: mention WeatherOptics (the industry's white-label risk engine) once the core is built.
