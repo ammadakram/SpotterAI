@@ -1,9 +1,9 @@
 # Progress
 
-_Last updated: 2026-11-15_
+_Last updated: 2026-11-16_
 
 ## Status
-Phase: **Build — Slice 1 done** → next: Slice 2 (routes and checkpoints on the map).
+Phase: **Build — Slice 2 done** → next: Slice 3 (weather, risk, recommendation, first deploy).
 
 ## Done
 - Claude context setup: CLAUDE.md, docs/ (PROGRESS, DECISIONS, ASSESSMENT), `/checkpoint` command.
@@ -12,12 +12,12 @@ Phase: **Build — Slice 1 done** → next: Slice 2 (routes and checkpoints on t
 - Architecture in `docs/ARCHITECTURE.md`, all §5 open points decided (2026-11-15).
 - Slice 1: Django + DRF backend (uv, ruff, pytest, health endpoint), Vite + React + TS frontend (Tailwind, oxlint, Prettier, Vitest, MapLibre map), GitHub Actions CI, Open-Meteo measured. CI green. HERE verified, fixtures recorded (Dallas → Denver routes, no-route case, autosuggest).
 - Architecture walkthrough complete (Parts 1–7: shape, backend, domain, pipeline, API, frontend + map, testing).
+- Slice 2: `domain/checkpoints.py` + `geometry.py` (TDD), HERE client + parser (`clients/here.py`), `/api/places` + `/api/plans` (routes + checkpoints), one error shape (`errors.py`); form with place search, route list, route lines + checkpoint dots on the map. 45 backend tests. Checked in the browser against real HERE; reviewed (/code-review + silent-failure-hunter), findings fixed.
 - Walkthrough fixes to ARCHITECTURE.md: `decidedBy` value list, `isLoadEscalated` example, heatmap `startsAt` = the hour bucket containing now, place-search debounce + `limit=5`.
 
 ## Next up
-1. Slice 2 (`docs/PLAN.md`): domain geometry/timeline/checkpoints (TDD — agree test seams with the user first), HERE client, `/api/places` + `/api/plans` (routes + checkpoints), form + map.
-   Needs a flexible-polyline decoder (HERE's `flexpolyline` package).
-2. Record an Open-Meteo fixture for the Dallas → Denver checkpoints in Slice 3, once checkpoints exist.
+1. Slice 3 (`docs/PLAN.md`): record an Open-Meteo fixture for the Dallas → Denver checkpoints, then TDD `risk.py` (classify), forecast-hour pick, assess + `ranking.py`; Open-Meteo client; add risk to the plan response; colour checkpoints; credit Open-Meteo on the map. Agree test seams with the user first.
+2. Decide hosting before Slice 3's first deploy.
 
 ## Open questions
 - Open-Meteo: very long trips at 10 mi spacing can still exceed 600 calls/min (0.5° cells chosen; paid key if it shows up).

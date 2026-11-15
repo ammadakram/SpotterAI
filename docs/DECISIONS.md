@@ -42,10 +42,16 @@ One line each. Newest at the bottom. Include *why*, and record dead ends so they
 - 2026-11-15 — Frontend lint: oxlint (the current Vite template's default) + Prettier, not ESLint. Why: typescript-eslint supports TypeScript < 6.1 and the template ships TypeScript 7.
 - 2026-11-15 — Python tooling: uv (pyproject + uv.lock), no package build. Django with no database apps (no admin/auth/sessions).
 - 2026-11-15 — Heatmap cells 0.5° (~35 × 28 mi), not 0.25°. Why: Open-Meteo charges 1 call per location and the free limit is 600/min; 0.25° cells made one plan cost up to ~1,300 calls. 0.5° cuts grid calls ~4×. The heatmap is only a picture, so the coarser cells cost little.
+- 2026-11-16 — Checkpoint miles come from HERE's span lengths; the drawn line only says where a mile is. Why: span lengths sum exactly to HERE's distance, while the decoded line is ~0.7 mi shorter on Dallas → Denver, so measuring the line would make checkpoints disagree with `distanceMi`.
+- 2026-11-16 — Departure: the server accepts up to 10 min in the past; the form's empty departure means "now", computed at submit. Why: "leave now" arrives seconds late, and a default timestamp frozen at page load went stale.
+- 2026-11-16 — HERE routes with a `critical` section notice (e.g. violated truck restriction) are dropped; if none remain → NO_ROUTE_FOUND. Why: such a route is not legal for this truck.
+- 2026-11-16 — API tests fake HERE at the HTTP level (`httpx.MockTransport` serving recorded JSON), not with a fake client object. Why: the tests then also cover our request params (gross weight, limit=5) and parsing.
+- 2026-11-16 — Place-search failures use ROUTING_UNAVAILABLE (502) with their own message; no extra error code. Why: same provider (HERE), and the UI only shows the message.
+- LATER (Slice 5) — Simplify route geometry for display (now ~8,800 points per route, response ~550 KB), as ARCHITECTURE.md specifies.
 - LATER (v2) — Progressive loading: send routes + checkpoints + ranking first, heatmap in a second request. Measure the v1 response time first; only do it if the wait is noticeable.
 - LATER — HOS rest breaks as an optional toggle, after the core is done.
 - LATER — Loom: mention WeatherOptics (the industry's white-label risk engine) once the core is built.
 - LATER — Hosting: VPS vs Vercel + Render. Affects the Open-Meteo rate limit (shared vs dedicated IP).
 
 ## Tried & rejected / mistakes
-- _(none yet)_
+- 2026-11-16 — Place search kept the previous query's results visible (`keepPreviousData`) so Enter could pick a place for older text; and Enter in a loading list submitted the form. Fixed: results only count when they match the current text, and Enter in an open list never submits.

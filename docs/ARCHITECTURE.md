@@ -132,7 +132,7 @@ The response has **the same shape in every case**. "No safe route" is `recommend
 **Errors: one shape everywhere.**
 
 ```json
-{ "error": { "code": "VALIDATION_ERROR", "message": "Departure must be within the next 48 hours.", "details": { "departureAt": ["..."] } } }
+{ "error": { "code": "VALIDATION_ERROR", "message": "Departure must be between now and 48 hours from now.", "details": { "departureAt": ["..."] } } }
 ```
 
 | Code | HTTP | When |

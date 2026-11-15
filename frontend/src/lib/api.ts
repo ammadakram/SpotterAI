@@ -1,0 +1,78 @@
+// Types and calls for the two backend endpoints. Shapes follow docs/ARCHITECTURE.md.
+
+export type LonLat = [number, number]
+
+export type Place = { label: string; lon: number; lat: number }
+
+export type Checkpoint = {
+  mile: number
+  coordinates: LonLat
+  eta: string
+  coversMi: [number, number]
+}
+
+export type PlannedRoute = {
+  id: string
+  label: string
+  geometry: LonLat[]
+  distanceMi: number
+  durationS: number
+  arrivalAt: string
+  checkpoints: Checkpoint[]
+}
+
+export type Plan = { generatedAt: string; routes: PlannedRoute[] }
+
+export type PlanRequest = {
+  origin: Place
+  destination: Place
+  departureAt: string
+  loadLb: number
+  spacingMi: number
+}
+
+/** An error the user should see, with the server's message when it sent one. */
+export class ApiError extends Error {
+  readonly code: string
+
+  constructor(code: string, message: string) {
+    super(message)
+    this.code = code
+  }
+}
+
+export function searchPlaces(query: string, signal?: AbortSignal): Promise<{ places: Place[] }> {
+  return request(`/api/places?${new URLSearchParams({ q: query })}`, { signal })
+}
+
+export function createPlan(body: PlanRequest): Promise<Plan> {
+  return request('/api/plans', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
+  })
+}
+
+async function request<T>(path: string, init: RequestInit): Promise<T> {
+  let response: Response
+  try {
+    response = await fetch(path, init)
+  } catch (error) {
+    if (init.signal?.aborted) throw error
+    throw new ApiError('NETWORK_ERROR', 'Could not reach the server. Check your connection.')
+  }
+
+  const body = await response.json().catch(() => undefined)
+  if (!response.ok) {
+    // Our API always sends { error: { code, message } }; anything else came from a proxy or crash.
+    const error = body?.error
+    if (error?.code && error?.message) throw new ApiError(error.code, error.message)
+    throw new ApiError(
+      `HTTP_${response.status}`,
+      `The server answered with status ${response.status}.`,
+    )
+  }
+  if (body === undefined)
+    throw new ApiError('BAD_RESPONSE', 'The server sent a response we could not read.')
+  return body as T
+}

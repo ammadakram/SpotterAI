@@ -1,5 +1,6 @@
 """Django settings. All configuration comes from environment variables (see .env.example)."""
 
+import logging
 import os
 from pathlib import Path
 
@@ -59,6 +60,7 @@ REST_FRAMEWORK = {
     "DEFAULT_AUTHENTICATION_CLASSES": [],
     "DEFAULT_PERMISSION_CLASSES": [],
     "UNAUTHENTICATED_USER": None,
+    "EXCEPTION_HANDLER": "planner.errors.api_exception_handler",
 }
 
 # In-process cache for weather responses (no shared cache needed for one server process).
@@ -66,3 +68,7 @@ CACHES = {"default": {"BACKEND": "django.core.cache.backends.locmem.LocMemCache"
 
 USE_TZ = True
 TIME_ZONE = "UTC"
+
+# httpx logs every request URL at INFO, and HERE's URLs carry the API key. Keep it at WARNING
+# so no future logging setup can write the key to the logs.
+logging.getLogger("httpx").setLevel(logging.WARNING)
