@@ -64,12 +64,12 @@ backend/
 1. **Routes.** HERE Routing v8 with `transportMode=truck`, `alternatives=2` (3 routes total), `departureTime`, and `vehicle[grossWeight]` = load + 35,000 lb tare, converted to kg. We ask for the polyline plus per-piece durations, either spans or actions; the exact parameter is confirmed in the first slice. We use whatever HERE returns: 1–3 routes, no banner.
 2. **Timeline per route.** Cumulative (distance → seconds) from those per-piece durations, interpolated linearly by distance inside each piece. This gives a truck-speed ETA at any mile, not a single average speed.
 3. **Checkpoints.** At miles 0, s, 2s, …, plus the destination (s = 10/25/50). Each checkpoint has a coordinate, an ETA, and the stretch of road it covers (midpoint to midpoint; the stretches sum to the route length).
-4. **Corridor grid.** 0.25° cells (~17 × 14 mi) whose centre is within 30 mi of any route. Used only for the heatmap.
+4. **Corridor grid.** 0.5° cells (~35 × 28 mi) whose centre is within 30 mi of any route. Used only for the heatmap.
 5. **Weather.** One forecast series per unique location:
    - checkpoints, snapped to 0.05° (~3 mi, close to the forecast model's resolution), and
    - grid cell centres.
 
-   Variables: `wind_speed_10m`, `wind_gusts_10m`, `rain`, `showers`, `snowfall`, in `mph` / `inch`, UTC. Every location is fetched for the same fixed range, `forecast_hours=96` (starts at the current hour; `forecast_days` would start at midnight UTC), so a cached entry always covers any plan's hours (departure up to +48 h plus the trip). Requests are batched, 100 coordinates per request (URL ≈ 2 KB, ≈ 1.4 s, ≈ 485 KB), run in parallel, and cached for 30 min. Cache key = the rounded location only: checkpoints rounded to the nearest 0.05°, grid cells by their centre on fixed 0.25° lines. Errors are never cached.
+   Variables: `wind_speed_10m`, `wind_gusts_10m`, `rain`, `showers`, `snowfall`, in `mph` / `inch`, UTC. Every location is fetched for the same fixed range, `forecast_hours=96` (starts at the current hour; `forecast_days` would start at midnight UTC), so a cached entry always covers any plan's hours (departure up to +48 h plus the trip). Requests are batched, 100 coordinates per request (URL ≈ 2 KB, ≈ 1.4 s, ≈ 485 KB), run in parallel, and cached for 30 min. Cache key = the rounded location only: checkpoints rounded to the nearest 0.05°, grid cells by their centre on fixed 0.5° lines. Errors are never cached.
 6. **Pick the forecast hour.** Open-Meteo's rain and snow at hour T are the total for the hour *ending* at T. So a checkpoint reached at 9:45 uses the 10:00 value, the hour the truck is actually in. Wind uses the same slot.
 7. **Classify.** Each condition gets a level from the brief's table (each band starts at its lower bound). The checkpoint level is the worst of the three. Load rules escalate wind only, and the response flags when they did. If a needed value is missing, the checkpoint is `NO_FORECAST` with a reason, never Low.
 8. **Assess routes.** Miles per level (including `unknown`), a distance-weighted average (0–4), and the risk stretches with start and end times.
@@ -111,7 +111,7 @@ HERE Autosuggest restricted to `countryCode:USA` (with `at` = centre of the US, 
           "noForecastReason": null }] }],
   "ranking": { "orderedRouteIds": ["r2", "r1", "r3"], "recommendedRouteId": "r2",
                "decidedBy": "HIGH_MILES" },
-  "heatmap": { "startsAt": "...(next full hour: the hour bucket that contains now)", "hours": 49, "cellSizeDeg": 0.25,
+  "heatmap": { "startsAt": "...(next full hour: the hour bucket that contains now)", "hours": 49, "cellSizeDeg": 0.5,
                "cells": [{ "center": [-97.0, 33.0],
                            "risk": [0, 0, 1, ...], "windMph": [...], "rainInHr": [...], "snowInHr": [...] }] } }
 ```
@@ -195,7 +195,7 @@ CI: one GitHub Actions workflow runs ruff + pytest (backend), and ESLint + Vites
 
 1. **DECIDED** — Checkpoints with `NO_FORECAST`: their miles count as `unknown` and are left out of ranking (ranking and the average use the known miles). The UI shows them whenever `unknown > 0`, with no threshold: a small note on the route card ("Last 40 mi: no forecast") and grey checkpoint dots on the map. The dots need no backend change; they come from the checkpoint's `risk` through the normal colour scale. Rare: only when an ETA passes the 4-day fetch range or Open-Meteo has a gap.
 2. **DECIDED** — "No safe route" screen: show the message and the corridor heatmap (it explains *why*), but no routes. Frontend only; easy to change after seeing it.
-3. **DECIDED** — Heatmap render style: filled squares (one `fill` polygon per 0.25° cell, coloured by its own value).
+3. **DECIDED** — Heatmap render style: filled squares (one `fill` polygon per 0.5° cell, coloured by its own value).
 4. **DECIDED** — Tailwind CSS.
 5. To verify in the first slice: the exact HERE parameters for per-piece durations and the max `alternatives` (needs a HERE key).
-6. **Measured 2026-11-15 — Open-Meteo cost.** Each location costs 1 call (the pricing calculator's formula and the `x-ratelimit-cost` header agree; our 5 variables × 4 days stay under the 10-variable / 14-day multipliers). Free limits: 600/min, 5,000/h, 10,000/day, 300,000/month, per IP. Estimated cost of one uncached plan (3 routes, checkpoints + 0.25° grid): Dallas → Denver ≈ 320–510 calls, LA → Chicago ≈ 810–1,300. **OPEN:** long trips exceed the per-minute limit in one plan. Options: coarser heatmap cells, a paid key (Standard: unlimited per minute, 1M/month), or both. Responses carry `x-ratelimit-remaining`, so a hit limit can give a clear error. Data is CC BY 4.0: the map must credit Open-Meteo.
+6. **Measured 2026-11-15 — Open-Meteo cost.** Each location costs 1 call (the pricing calculator's formula and the `x-ratelimit-cost` header agree; our 5 variables × 4 days stay under the 10-variable / 14-day multipliers). Free limits: 600/min, 5,000/h, 10,000/day, 300,000/month, per IP. Estimated cost of one uncached plan (3 routes, checkpoints + grid). With 0.25° cells: Dallas → Denver ≈ 320–510 calls, LA → Chicago ≈ 810–1,300. **DECIDED: 0.5° cells** (≈ 4× fewer grid calls): Dallas → Denver ≈ 120–310, LA → Chicago ≈ 300–780. A very long trip at 10 mi spacing can still pass 600/min; then the plan fails with a clear `WEATHER_UNAVAILABLE` message (responses carry `x-ratelimit-remaining`). A paid key (Standard: no per-minute limit, 1M/month) stays an option if this shows up in practice. Data is CC BY 4.0: the map must credit Open-Meteo.

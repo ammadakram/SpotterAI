@@ -31,8 +31,8 @@ One line each. Newest at the bottom. Include *why*, and record dead ends so they
 - 2026-11-13 — Testing: pytest (risk logic + API with recorded fixtures), Vitest (pure helpers). No Playwright/component tests. Linting: ruff, oxlint + Prettier (see 2026-11-15).
 - 2026-11-13 — CI: one GitHub Actions workflow (lint, test, build), added with the project scaffold. No CD for now.
 - 2026-11-13 — Skills vendored in `.claude/skills/`: codebase-design, tdd (Matt Pocock), api-and-interface-design (Addy Osmani).
-- 2026-11-14 — Weather cache: key = rounded location only (checkpoints to nearest 0.05°, grid cells = centre on fixed 0.25° lines), 30 min. Every location is fetched for one fixed range (now → +4 days). Why: the key holds no time, so a shorter per-trip range would give cache hits with missing hours (false NO_FORECAST). HERE routes are not cached (low hit rate). Errors are never cached.
-- 2026-11-14 — Corridor width (30 mi) and cell size (0.25°) are our choices, not from the brief. Why: wide enough to show weather approaching the route, small enough to keep ~250 cells for a 1,000-mile trip.
+- 2026-11-14 — Weather cache: key = rounded location only (checkpoints to nearest 0.05°, grid cells = centre on fixed 0.5° lines (see 2026-11-15)), 30 min. Every location is fetched for one fixed range (now → +4 days). Why: the key holds no time, so a shorter per-trip range would give cache hits with missing hours (false NO_FORECAST). HERE routes are not cached (low hit rate). Errors are never cached.
+- 2026-11-14 — Corridor width (30 mi) is our choice, not from the brief. Why: wide enough to show weather approaching the route.
 - 2026-11-14 — Place search: starts from the first character (no minimum), 300 ms debounce, TanStack Query cache; server sends HERE `limit=5`. Why: user wants instant suggestions; the limit keeps the dropdown short and can't be raised by the client.
 - 2026-11-15 — Route count: request exactly 3 routes (alternatives=2), as the brief says. If all 3 have No Travel we show "no safe route" even though a 4th HERE alternative might be safe. Why: brief asks for 3; extra alternatives are usually near-duplicates and cost more weather lookups. Mention this limit (and "depart later" as future work) in the README and Loom.
 - 2026-11-15 — `decidedBy` values: SEVERE_MILES, HIGH_MILES, AVERAGE_RISK, DURATION, ONLY_DRIVABLE, or null. A full four-way tie keeps HERE's order and reports DURATION. Why: the frontend needs the full list to write the "why this route" sentence.
@@ -41,6 +41,7 @@ One line each. Newest at the bottom. Include *why*, and record dead ends so they
 - 2026-11-15 — Heatmap style: filled squares, not MapLibre's heatmap layer. Why: risk is 5 discrete levels; a blended heatmap paints in-between colours that no cell has.
 - 2026-11-15 — Frontend lint: oxlint (the current Vite template's default) + Prettier, not ESLint. Why: typescript-eslint supports TypeScript < 6.1 and the template ships TypeScript 7.
 - 2026-11-15 — Python tooling: uv (pyproject + uv.lock), no package build. Django with no database apps (no admin/auth/sessions).
+- 2026-11-15 — Heatmap cells 0.5° (~35 × 28 mi), not 0.25°. Why: Open-Meteo charges 1 call per location and the free limit is 600/min; 0.25° cells made one plan cost up to ~1,300 calls. 0.5° cuts grid calls ~4×. The heatmap is only a picture, so the coarser cells cost little.
 - LATER (v2) — Progressive loading: send routes + checkpoints + ranking first, heatmap in a second request. Measure the v1 response time first; only do it if the wait is noticeable.
 - LATER — HOS rest breaks as an optional toggle, after the core is done.
 - LATER — Loom: mention WeatherOptics (the industry's white-label risk engine) once the core is built.
