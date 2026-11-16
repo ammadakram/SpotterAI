@@ -17,7 +17,7 @@ Phase: **Build — Slice 3 code done** → next: first deploy (Vercel + Render/R
 - Walkthrough fixes to ARCHITECTURE.md: `decidedBy` value list, `isLoadEscalated` example, heatmap `startsAt` = the hour bucket containing now, place-search debounce + `limit=5`.
 
 ## Next up
-1. First deploy: backend on Render or Railway (gunicorn, 1 worker + threads, env vars), frontend on Vercel (API base URL, CORS). Check the real Open-Meteo per-IP limit.
+1. First deploy: code is ready (gunicorn, gzip, `VITE_API_BASE_URL`, `backend/railway.json`); the user deploys with docs/DEPLOY.md and reports back. Then check the live site and the real Open-Meteo per-IP limit.
 2. Slice 4 (`docs/PLAN.md`): corridor grid + heatmap + 0–48 h slider.
 
 ## Open questions

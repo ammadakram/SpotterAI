@@ -24,6 +24,10 @@ npm install
 npm run dev
 ```
 
+## Deploy
+
+Backend on Railway, frontend on Vercel: see [docs/DEPLOY.md](docs/DEPLOY.md).
+
 ## Checks
 
 ```bash

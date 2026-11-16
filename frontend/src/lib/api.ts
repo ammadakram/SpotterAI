@@ -1,5 +1,9 @@
 // Types and calls for the two backend endpoints. Shapes follow docs/ARCHITECTURE.md.
 
+// Production: the backend's own address (set in Vercel). Development: empty, so requests
+// go to this server and Vite's proxy forwards /api to Django.
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? ''
+
 export type LonLat = [number, number]
 
 export type Place = { label: string; lon: number; lat: number }
@@ -80,11 +84,11 @@ export class ApiError extends Error {
 }
 
 export function searchPlaces(query: string, signal?: AbortSignal): Promise<{ places: Place[] }> {
-  return request(`/api/places?${new URLSearchParams({ q: query })}`, { signal })
+  return request(`${API_BASE_URL}/api/places?${new URLSearchParams({ q: query })}`, { signal })
 }
 
 export function createPlan(body: PlanRequest): Promise<Plan> {
-  return request('/api/plans', {
+  return request(`${API_BASE_URL}/api/plans`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(body),

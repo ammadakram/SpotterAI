@@ -1,6 +1,5 @@
 """Django settings. All configuration comes from environment variables (see .env.example)."""
 
-import logging
 import os
 from pathlib import Path
 
@@ -47,6 +46,8 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
+    # Plan responses are ~0.5 MB of JSON (route lines); gzip cuts the transfer several times.
+    "django.middleware.gzip.GZipMiddleware",
     "corsheaders.middleware.CorsMiddleware",
     "django.middleware.common.CommonMiddleware",
 ]
@@ -69,6 +70,16 @@ CACHES = {"default": {"BACKEND": "django.core.cache.backends.locmem.LocMemCache"
 USE_TZ = True
 TIME_ZONE = "UTC"
 
-# httpx logs every request URL at INFO, and HERE's URLs carry the API key. Keep it at WARNING
-# so no future logging setup can write the key to the logs.
-logging.getLogger("httpx").setLevel(logging.WARNING)
+# Everything to stdout, which the host collects. httpx logs every request URL at INFO, and
+# HERE's URLs carry the API key, so httpx (and httpcore below it) stay at WARNING.
+LOGGING = {
+    "version": 1,
+    "disable_existing_loggers": False,
+    "formatters": {"plain": {"format": "%(levelname)s %(name)s: %(message)s"}},
+    "handlers": {"console": {"class": "logging.StreamHandler", "formatter": "plain"}},
+    "root": {"handlers": ["console"], "level": "INFO"},
+    "loggers": {
+        "httpx": {"level": "WARNING"},
+        "httpcore": {"level": "WARNING"},
+    },
+}
