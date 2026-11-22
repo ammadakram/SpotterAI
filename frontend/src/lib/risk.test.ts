@@ -20,7 +20,8 @@ function route(id: string, overrides: Partial<PlannedRoute> = {}): PlannedRoute 
 }
 
 function plan(routes: PlannedRoute[], ranking: Ranking): Plan {
-  return { generatedAt: '2026-11-16T12:00:00Z', routes, ranking }
+  const heatmap = { startsAt: '2026-11-16T12:00:00Z', hours: 49, cellSizeDeg: 0.5, cells: [] }
+  return { generatedAt: '2026-11-16T12:00:00Z', routes, ranking, heatmap }
 }
 
 const miles = (severe: number, high: number) => ({

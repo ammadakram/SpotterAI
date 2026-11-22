@@ -1,6 +1,8 @@
 import { useMutation } from '@tanstack/react-query'
 import { useState } from 'react'
 import { createPlan, type PlannedRoute } from './lib/api'
+import type { HeatmapVariable } from './lib/heatmap'
+import { ForecastControls } from './features/forecast/ForecastControls'
 import { MapView } from './features/map/MapView'
 import { PlanForm } from './features/plan-form/PlanForm'
 import { Recommendation } from './features/routes/Recommendation'
@@ -10,9 +12,14 @@ const NO_ROUTES: PlannedRoute[] = []
 
 export default function App() {
   const [selectedRouteId, setSelectedRouteId] = useState<string | null>(null)
+  const [hour, setHour] = useState(0)
+  const [variable, setVariable] = useState<HeatmapVariable>('risk')
   const planning = useMutation({
     mutationFn: createPlan,
-    onSuccess: (plan) => setSelectedRouteId(plan.ranking.recommendedRouteId),
+    onSuccess: (plan) => {
+      setSelectedRouteId(plan.ranking.recommendedRouteId)
+      setHour(0)
+    },
   })
   const plan = planning.data
   // With no safe route there is nothing to drive, so no route is drawn or listed.
@@ -39,9 +46,22 @@ export default function App() {
       <main className="relative flex-1">
         <MapView
           routes={plan && hasSafeRoute ? plan.routes : NO_ROUTES}
+          heatmap={plan?.heatmap ?? null}
+          hour={hour}
+          variable={variable}
           selectedRouteId={selectedRouteId}
           onSelectRoute={setSelectedRouteId}
         />
+        {plan && (
+          <ForecastControls
+            startsAt={plan.heatmap.startsAt}
+            lastHour={plan.heatmap.hours - 1}
+            hour={hour}
+            onHourChange={setHour}
+            variable={variable}
+            onVariableChange={setVariable}
+          />
+        )}
       </main>
     </div>
   )

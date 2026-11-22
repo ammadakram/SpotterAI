@@ -63,7 +63,29 @@ export type Ranking = {
   decidedBy: DecidedBy | null
 }
 
-export type Plan = { generatedAt: string; routes: PlannedRoute[]; ranking: Ranking }
+export type HeatmapCell = {
+  center: LonLat
+  /** Risk score per hour: 0 Low … 4 No travel; null = no forecast for that hour */
+  risk: (number | null)[]
+  windMph: (number | null)[]
+  rainInHr: (number | null)[]
+  snowInHr: (number | null)[]
+}
+
+export type Heatmap = {
+  /** Hour 0: the hour that contains the time of planning */
+  startsAt: string
+  hours: number
+  cellSizeDeg: number
+  cells: HeatmapCell[]
+}
+
+export type Plan = {
+  generatedAt: string
+  routes: PlannedRoute[]
+  ranking: Ranking
+  heatmap: Heatmap
+}
 
 export type PlanRequest = {
   origin: Place

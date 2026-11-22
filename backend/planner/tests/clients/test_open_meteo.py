@@ -5,7 +5,7 @@ import pytest
 from django.core.cache import cache
 
 from planner.clients.open_meteo import OpenMeteoClient
-from planner.errors import WeatherUnavailable
+from planner.errors import TripTooLarge, WeatherUnavailable
 from planner.tests.fakes import FakeOpenMeteo
 
 
@@ -15,9 +15,16 @@ def fake():
     return FakeOpenMeteo()
 
 
-def client_for(fake: FakeOpenMeteo) -> OpenMeteoClient:
+def client_for(fake: FakeOpenMeteo, api_key: str | None = None) -> OpenMeteoClient:
     http = httpx.Client(transport=httpx.MockTransport(fake.handle))
-    return OpenMeteoClient(http, base_url="https://api.open-meteo.com", api_key=None, cache=cache)
+    return OpenMeteoClient(
+        http, base_url="https://api.open-meteo.com", api_key=api_key, cache=cache
+    )
+
+
+def distinct_places(count: int, start_lat: float = 30.0) -> list[tuple[float, float]]:
+    """Points 0.1° apart, so none share a 0.05° square."""
+    return [(-100.0 + (i % 100) * 0.1, start_lat + (i // 100) * 0.1) for i in range(count)]
 
 
 def test_parses_the_hourly_series(fake):
@@ -144,3 +151,26 @@ def test_bad_data_is_weather_unavailable(fake, break_place):
 
     with pytest.raises(WeatherUnavailable):
         client_for(fake).get_hourly([(-96.8, 32.8)])
+
+
+def test_more_new_places_than_the_free_minute_allows_fails_before_any_request(fake):
+    # Free plan: 600 places per minute per IP; we stop at 550 to leave room for other plans.
+    with pytest.raises(TripTooLarge, match="551 places"):
+        client_for(fake).get_hourly(distinct_places(551))
+
+    assert fake.requests == []  # the minute's budget is untouched
+
+
+def test_the_budget_counts_only_places_not_in_the_cache(fake):
+    client = client_for(fake)
+    client.get_hourly(distinct_places(300))
+
+    client.get_hourly(distinct_places(300) + distinct_places(250, start_lat=40.0))
+
+    assert sum(fake.requested_places()) == 550
+
+
+def test_a_paid_key_has_no_minute_limit(fake):
+    client_for(fake, api_key="paid").get_hourly(distinct_places(551))
+
+    assert sum(fake.requested_places()) == 551

@@ -31,6 +31,13 @@ class RoutingUnavailable(AppError):
     status = 502
 
 
+class TripTooLarge(AppError):
+    """The trip needs more weather lookups than the free weather plan allows at once."""
+
+    code = "TRIP_TOO_LARGE"
+    status = 422
+
+
 class WeatherUnavailable(AppError):
     code = "WEATHER_UNAVAILABLE"
     status = 502

@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import type { Place, PlanRequest } from '../../lib/api'
 import { toDateTimeLocal } from '../../lib/format'
+import { SegmentedControl } from '../../components/SegmentedControl'
 import { PlaceInput } from './PlaceInput'
 
 const MAX_LOAD_LB = 45_000
@@ -88,24 +89,12 @@ export function PlanForm({ isSubmitting, onSubmit }: Props) {
           <legend className="mb-1 block text-sm font-medium text-slate-700">
             Checkpoint every
           </legend>
-          <div className="flex rounded-md border border-slate-300 p-0.5">
-            {SPACINGS_MI.map((mi) => (
-              <label
-                key={mi}
-                className="flex-1 cursor-pointer rounded px-1 py-1.5 text-center whitespace-nowrap text-sm text-slate-600 has-checked:bg-slate-900 has-checked:text-white has-focus-visible:ring-2 has-focus-visible:ring-slate-400"
-              >
-                <input
-                  type="radio"
-                  name="spacing"
-                  value={mi}
-                  checked={spacingMi === mi}
-                  onChange={() => setSpacingMi(mi)}
-                  className="sr-only"
-                />
-                {mi} mi
-              </label>
-            ))}
-          </div>
+          <SegmentedControl
+            name="spacing"
+            options={SPACINGS_MI.map((mi) => ({ value: mi, label: `${mi} mi` }))}
+            value={spacingMi}
+            onChange={setSpacingMi}
+          />
         </fieldset>
       </div>
 

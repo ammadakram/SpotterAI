@@ -9,7 +9,7 @@ import httpx
 from django.core.cache import BaseCache
 
 from planner.domain.types import HourlySeries, LonLat
-from planner.errors import WeatherUnavailable
+from planner.errors import TripTooLarge, WeatherUnavailable
 
 logger = logging.getLogger(__name__)
 
@@ -29,6 +29,10 @@ SNAP_DEG = 0.05
 PLACES_PER_REQUEST = 100  # keeps the URL around 2 KB
 MAX_PARALLEL_REQUESTS = 4
 CACHE_SECONDS = 30 * 60
+# The free plan allows 600 places per minute per IP. A plan that needs more can never finish,
+# and trying would use up the minute for everyone, so it is refused before any request.
+# 550 leaves room for other plans in the same minute. A paid key has no minute limit.
+FREE_PLAN_MAX_NEW_PLACES = 550
 
 UNAVAILABLE = "Weather data is unavailable right now."
 RATE_LIMITED = "The weather service's request limit was reached. Try again in a minute."
@@ -53,6 +57,12 @@ class OpenMeteoClient:
             p: self._cache.get(_cache_key(p)) for p in dict.fromkeys(snapped)
         }
         missing = [p for p, series in found.items() if series is None]
+        if not self._api_key and len(missing) > FREE_PLAN_MAX_NEW_PLACES:
+            raise TripTooLarge(
+                f"This trip needs weather for {len(missing)} places, more than the free weather "
+                f"service allows per minute.",
+                {"places": len(missing), "limit": FREE_PLAN_MAX_NEW_PLACES},
+            )
         batches = [
             missing[i : i + PLACES_PER_REQUEST] for i in range(0, len(missing), PLACES_PER_REQUEST)
         ]

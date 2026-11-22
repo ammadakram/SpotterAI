@@ -1,6 +1,7 @@
 import httpx
 import pytest
 
+from planner.clients import open_meteo
 from planner.tests.api.conftest import set_weather
 from planner.tests.fakes import load_fixture
 
@@ -229,3 +230,89 @@ def test_weather_without_any_usable_value_is_502_not_a_crash(client, fake_here, 
 
     assert response.status_code == 502
     assert response.json()["error"]["code"] == "WEATHER_UNAVAILABLE"
+
+
+def test_plan_includes_the_corridor_heatmap(client, fake_here):
+    heatmap = client.post("/api/plans", plan_body(), content_type="application/json").json()[
+        "heatmap"
+    ]
+
+    assert heatmap["startsAt"] == "2026-11-16T12:00:00Z"  # now is exactly 12:00
+    assert heatmap["hours"] == 49
+    assert heatmap["cellSizeDeg"] == 0.5
+    assert len(heatmap["cells"]) > 50  # a corridor along ~800 mi routes
+    for cell in heatmap["cells"]:
+        lon, lat = cell["center"]
+        assert (lon - 0.25) % 0.5 == 0 and (lat - 0.25) % 0.5 == 0
+        assert cell["risk"] == [0] * 49  # calm weather: Low everywhere
+        assert cell["windMph"] == [5.0] * 49
+        assert len(cell["rainInHr"]) == len(cell["snowInHr"]) == 49
+
+
+def test_heatmap_risk_uses_the_load(client, fake_here, fake_weather):
+    set_weather(fake_weather, wind_mph=40)
+
+    heatmap = client.post(
+        "/api/plans", plan_body(loadLb=45000), content_type="application/json"
+    ).json()["heatmap"]
+
+    assert {r for cell in heatmap["cells"] for r in cell["risk"]} == {3}  # Severe
+
+
+def test_checkpoints_and_grid_are_fetched_in_one_pass_without_repeats(
+    client, fake_here, fake_weather
+):
+    client.post("/api/plans", plan_body(), content_type="application/json")
+
+    places = [
+        (lon, lat)
+        for request in fake_weather.requests
+        for lon, lat in zip(
+            request.url.params["longitude"].split(","),
+            request.url.params["latitude"].split(","),
+            strict=True,
+        )
+    ]
+    assert len(places) == len(set(places))
+    assert all(n <= 100 for n in fake_weather.requested_places())
+
+
+def test_trip_too_large_for_the_free_weather_plan_is_422_without_any_weather_call(
+    client, fake_here, fake_weather, monkeypatch
+):
+    monkeypatch.setattr(open_meteo, "FREE_PLAN_MAX_NEW_PLACES", 50)
+
+    response = client.post("/api/plans", plan_body(), content_type="application/json")
+
+    assert response.status_code == 422
+    error = response.json()["error"]
+    assert error["code"] == "TRIP_TOO_LARGE"
+    assert error["message"].endswith("Choose a larger checkpoint spacing.")
+    assert error["details"]["limit"] == 50
+    assert fake_weather.requests == []
+
+
+def test_too_large_at_the_widest_spacing_does_not_suggest_a_spacing(
+    client, fake_here, fake_weather, monkeypatch
+):
+    monkeypatch.setattr(open_meteo, "FREE_PLAN_MAX_NEW_PLACES", 50)
+
+    response = client.post("/api/plans", plan_body(spacingMi=50), content_type="application/json")
+
+    assert response.status_code == 422
+    message = response.json()["error"]["message"]
+    assert "too long for the free weather service" in message
+    assert "spacing" not in message
+
+
+def test_heatmap_values_just_under_a_band_edge_stay_under_it(client, fake_here, fake_weather):
+    # Rounding 24.96 up to 25.0 would paint the Wind view Moderate while risk says Low.
+    set_weather(fake_weather, wind_mph=24.96, rain_in_hr=0.0999)
+
+    cell = client.post("/api/plans", plan_body(), content_type="application/json").json()[
+        "heatmap"
+    ]["cells"][0]
+
+    assert cell["risk"][0] == 0
+    assert cell["windMph"][0] == 24.9
+    assert cell["rainInHr"][0] == 0.099

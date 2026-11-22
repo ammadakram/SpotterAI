@@ -5,6 +5,8 @@ from itertools import accumulate
 from planner.domain.geometry import METERS_PER_MILE, point_along
 from planner.domain.types import Checkpoint, LonLat, Route
 
+# The checkpoint spacings the app offers.
+SPACINGS_MI = (10, 25, 50)
 # Float sums of piece lengths drift; a spacing mile this close to the end is the end.
 SAME_MILE_TOLERANCE = 1e-6
 

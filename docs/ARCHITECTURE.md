@@ -138,6 +138,7 @@ The response has **the same shape in every case**. "No safe route" is `recommend
 | Code | HTTP | When |
 |---|---|---|
 | `VALIDATION_ERROR` | 400 | Bad input (range, missing field, unsupported spacing) |
+| `TRIP_TOO_LARGE` | 422 | The trip needs more new weather places than Open-Meteo's free plan allows per minute (we stop at 550 of 600). Checked before any weather call. Not used with a paid key. |
 | `NO_ROUTE_FOUND` | 422 | HERE returns no truck route between the points |
 | `ROUTING_UNAVAILABLE` | 502 | HERE errors, times out, or returns malformed data |
 | `WEATHER_UNAVAILABLE` | 502 | Open-Meteo errors, times out, rate-limits, or returns malformed data |

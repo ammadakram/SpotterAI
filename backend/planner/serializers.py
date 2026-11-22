@@ -1,18 +1,22 @@
 """Input validation for the API, and the domain -> JSON (camelCase) conversion."""
 
+import math
 from datetime import UTC, datetime, timedelta
 
 from rest_framework import serializers
 
+from planner.domain.checkpoints import SPACINGS_MI
+from planner.domain.corridor import CELL_DEG
 from planner.domain.geometry import METERS_PER_MILE
-from planner.domain.types import RatedCheckpoint, RiskLevel
+from planner.domain.heatmap import HEATMAP_HOURS
+from planner.domain.risk import SEVERITY
+from planner.domain.types import Heatmap, RatedCheckpoint, RiskLevel
 from planner.service import Plan, PlannedRoute, PlanRequest
 
 MAX_LOAD_LB = 45_000
 MAX_DEPARTURE_AHEAD = timedelta(hours=48)
 # "Depart now" reaches the server a few seconds late; don't reject it for that.
 DEPARTURE_GRACE = timedelta(minutes=10)
-SPACINGS_MI = [10, 25, 50]
 
 
 class PlaceSerializer(serializers.Serializer):
@@ -26,7 +30,7 @@ class PlanRequestSerializer(serializers.Serializer):
     destination = PlaceSerializer()
     departureAt = serializers.DateTimeField()
     loadLb = serializers.IntegerField(min_value=0, max_value=MAX_LOAD_LB)
-    spacingMi = serializers.ChoiceField(choices=SPACINGS_MI)
+    spacingMi = serializers.ChoiceField(choices=list(SPACINGS_MI))
 
     def validate_departureAt(self, value: datetime) -> datetime:
         now = self.context["now"]
@@ -67,7 +71,42 @@ def plan_to_json(plan: Plan) -> dict:
             "recommendedRouteId": plan.ranking.recommended_route_id,
             "decidedBy": plan.ranking.decided_by,
         },
+        "heatmap": _heatmap_json(plan.heatmap),
     }
+
+
+def _heatmap_json(heatmap: Heatmap) -> dict:
+    # Compact on purpose: ~100–300 cells x 49 hours x 4 values is the bulk of the response.
+    # Risk is the 0–4 score (null = no forecast). Numbers are cut down (floored), not rounded:
+    # band edges (25 mph, 0.10 in/hr…) sit on this grid, so a value never jumps into the next
+    # band and the Wind/Rain/Snow views agree with the risk view.
+    return {
+        "startsAt": _time(heatmap.starts_at),
+        "hours": HEATMAP_HOURS,
+        "cellSizeDeg": CELL_DEG,
+        "cells": [
+            {
+                "center": [cell.center[0], cell.center[1]],
+                "risk": [_risk_score(level) for level in cell.risk],
+                "windMph": [_floor(v, 1) for v in cell.wind_mph],
+                "rainInHr": [_floor(v, 3) for v in cell.rain_in_hr],
+                "snowInHr": [_floor(v, 3) for v in cell.snow_in_hr],
+            }
+            for cell in heatmap.cells
+        ],
+    }
+
+
+def _risk_score(level: RiskLevel) -> int | None:
+    return None if level == RiskLevel.NO_FORECAST else SEVERITY.index(level)
+
+
+def _floor(value: float | None, digits: int) -> float | None:
+    if value is None:
+        return None
+    scale = 10**digits
+    # The tiny nudge keeps float noise (0.3 stored as 0.29999…) from losing a whole step.
+    return math.floor(value * scale + 1e-9) / scale
 
 
 def _route_json(planned: PlannedRoute) -> dict:

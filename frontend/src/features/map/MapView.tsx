@@ -4,8 +4,14 @@ import type { FeatureCollection } from 'geojson'
 import 'maplibre-gl/dist/maplibre-gl.css'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import Map, { Layer, Source, type MapLayerMouseEvent, type MapRef } from 'react-map-gl/maplibre'
-import type { Checkpoint, PlannedRoute } from '../../lib/api'
+import type { Checkpoint, Heatmap, PlannedRoute } from '../../lib/api'
 import { boundsOf } from '../../lib/geo'
+import {
+  HEATMAP_STEPS,
+  PROPERTY_PREFIX,
+  heatmapGeoJson,
+  type HeatmapVariable,
+} from '../../lib/heatmap'
 import { RISK_COLOURS } from '../../lib/risk'
 import { CheckpointPopup } from './CheckpointPopup'
 import { RiskLegend } from './RiskLegend'
@@ -44,13 +50,26 @@ const CHECKPOINT_COLOUR: ExpressionSpecification = [
   '#ff00ff', // a level this list doesn't know: loud magenta, never a real risk colour
 ]
 
+const HEATMAP_OPACITY = 0.35
+const NO_HEATMAP: FeatureCollection = { type: 'FeatureCollection', features: [] }
+
 type Props = {
   routes: PlannedRoute[]
+  heatmap: Heatmap | null
+  hour: number
+  variable: HeatmapVariable
   selectedRouteId: string | null
   onSelectRoute: (routeId: string) => void
 }
 
-export function MapView({ routes, selectedRouteId, onSelectRoute }: Props) {
+export function MapView({
+  routes,
+  heatmap,
+  hour,
+  variable,
+  selectedRouteId,
+  onSelectRoute,
+}: Props) {
   const mapRef = useRef<MapRef>(null)
   // Remember which routes the popup belongs to, so it disappears when a new plan arrives.
   const [popup, setPopup] = useState<{ routes: PlannedRoute[]; checkpoint: Checkpoint } | null>(
@@ -63,12 +82,21 @@ export function MapView({ routes, selectedRouteId, onSelectRoute }: Props) {
   // so MapLibre never re-uploads the geometry.
   const routeLines = useMemo(() => routesGeoJson(routes), [routes])
   const checkpoints = useMemo(() => checkpointsGeoJson(routes), [routes])
+  const heatmapSquares = useMemo(() => (heatmap ? heatmapGeoJson(heatmap) : NO_HEATMAP), [heatmap])
 
   useEffect(() => {
-    if (routes.length === 0) return
-    const bounds = boundsOf(routes.flatMap((route) => route.geometry))
-    mapRef.current?.fitBounds(bounds, { padding: 60, duration: 800 })
-  }, [routes])
+    // Frame the routes; with no safe route there are none, so frame the corridor instead.
+    const points =
+      routes.length > 0
+        ? routes.flatMap((route) => route.geometry)
+        : (heatmap?.cells.map((cell) => cell.center) ?? [])
+    if (points.length === 0) return
+    // The top padding keeps the trip clear of the forecast controls drawn over the map.
+    mapRef.current?.fitBounds(boundsOf(points), {
+      padding: { top: 130, bottom: 40, left: 40, right: 40 },
+      duration: 800,
+    })
+  }, [routes, heatmap])
 
   const isSelected: ExpressionSpecification = ['==', ['get', 'id'], selectedRouteId ?? '']
 
@@ -96,6 +124,19 @@ export function MapView({ routes, selectedRouteId, onSelectRoute }: Props) {
       cursor={isPointing ? 'pointer' : 'grab'}
       attributionControl={{ customAttribution: ATTRIBUTION }}
     >
+      {/* First, so it is drawn under the routes. Moving the slider only swaps the property
+          the colour reads (r0 → r1 …): no data upload, no re-render of the squares. */}
+      <Source id="heatmap" type="geojson" data={heatmapSquares}>
+        <Layer
+          id="heatmap"
+          type="fill"
+          paint={{
+            'fill-color': heatmapColour(variable, hour),
+            'fill-opacity': HEATMAP_OPACITY,
+            'fill-outline-color': 'rgba(0, 0, 0, 0)',
+          }}
+        />
+      </Source>
       <Source id="routes" type="geojson" data={routeLines}>
         <Layer
           id="routes"
@@ -127,7 +168,7 @@ export function MapView({ routes, selectedRouteId, onSelectRoute }: Props) {
       {openCheckpoint && (
         <CheckpointPopup checkpoint={openCheckpoint} onClose={() => setPopup(null)} />
       )}
-      <RiskLegend />
+      <RiskLegend variable={variable} />
     </Map>
   )
 }
@@ -154,4 +195,15 @@ function checkpointsGeoJson(routes: PlannedRoute[]): FeatureCollection {
       })),
     ),
   }
+}
+
+function heatmapColour(variable: HeatmapVariable, hour: number): ExpressionSpecification {
+  const value: ExpressionSpecification = ['get', `${PROPERTY_PREFIX[variable]}${hour}`]
+  const [first, ...rest] = HEATMAP_STEPS[variable]
+  return [
+    'case',
+    ['==', value, null],
+    RISK_COLOURS.NO_FORECAST,
+    ['step', value, first.colour, ...rest.flatMap((step) => [step.from, step.colour])],
+  ]
 }

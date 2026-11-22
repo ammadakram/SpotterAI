@@ -112,3 +112,20 @@ class RouteAssessment:
     average_risk: float  # 0 (Low) .. 4 (No Travel), over the miles that have a forecast
     stretches: list[Stretch]  # cover the whole route, in order
     is_drivable: bool  # no No Travel anywhere
+
+
+@dataclass(frozen=True)
+class HeatmapCell:
+    """One grid cell's hourly values. A value is None when that hour has no forecast."""
+
+    center: LonLat
+    risk: list[RiskLevel]  # NO_FORECAST when the hour has no forecast
+    wind_mph: list[float | None]
+    rain_in_hr: list[float | None]
+    snow_in_hr: list[float | None]
+
+
+@dataclass(frozen=True)
+class Heatmap:
+    starts_at: datetime  # hour 0
+    cells: list[HeatmapCell]

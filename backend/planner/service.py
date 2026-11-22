@@ -5,11 +5,14 @@ from datetime import datetime, timedelta
 from typing import Protocol
 
 from planner.domain.assess import assess_route
-from planner.domain.checkpoints import place_checkpoints
+from planner.domain.checkpoints import SPACINGS_MI, place_checkpoints
+from planner.domain.corridor import corridor_cells
 from planner.domain.forecast import weather_at
+from planner.domain.heatmap import heatmap_frames
 from planner.domain.ranking import RankCandidate, Ranking, rank
 from planner.domain.risk import classify
 from planner.domain.types import (
+    Heatmap,
     HourlySeries,
     LonLat,
     NoForecast,
@@ -18,7 +21,7 @@ from planner.domain.types import (
     Route,
     RouteAssessment,
 )
-from planner.errors import WeatherUnavailable
+from planner.errors import TripTooLarge, WeatherUnavailable
 
 
 class RoutingProvider(Protocol):
@@ -55,6 +58,7 @@ class Plan:
     generated_at: datetime
     routes: list[PlannedRoute]
     ranking: Ranking
+    heatmap: Heatmap
 
 
 def plan_trip(
@@ -65,9 +69,19 @@ def plan_trip(
     )
     checkpoints = [place_checkpoints(r, request.spacing_mi, request.departure) for r in routes]
 
-    # One weather call for every checkpoint of every route: routes share most of their places.
-    all_points = [c.coordinates for route_checkpoints in checkpoints for c in route_checkpoints]
-    series = iter(weather.get_hourly(all_points))
+    cells = corridor_cells([r.points for r in routes])
+
+    # One weather pass for every checkpoint of every route and every heatmap cell: the client
+    # removes repeats (routes share most of their places) and batches the rest.
+    checkpoint_points = [
+        c.coordinates for route_checkpoints in checkpoints for c in route_checkpoints
+    ]
+    try:
+        all_series = weather.get_hourly(checkpoint_points + cells)
+    except TripTooLarge as exc:
+        raise _with_advice(exc, request.spacing_mi) from exc
+    series = iter(all_series[: len(checkpoint_points)])
+    cell_series = dict(zip(cells, all_series[len(checkpoint_points) :], strict=True))
 
     planned = []
     for i, (route, route_checkpoints) in enumerate(zip(routes, checkpoints, strict=True)):
@@ -96,4 +110,22 @@ def plan_trip(
         )
 
     ranking = rank([RankCandidate(p.id, p.assessment, p.route.duration_s) for p in planned])
-    return Plan(generated_at=now, routes=planned, ranking=ranking)
+    return Plan(
+        generated_at=now,
+        routes=planned,
+        ranking=ranking,
+        heatmap=heatmap_frames(cell_series, now, request.load_lb),
+    )
+
+
+def _with_advice(exc: TripTooLarge, spacing_mi: int) -> TripTooLarge:
+    """Say what the user can do. The heatmap's cells don't depend on the spacing, so at the
+    widest spacing there is nothing left to change."""
+    if spacing_mi < max(SPACINGS_MI):
+        return TripTooLarge(f"{exc.message} Choose a larger checkpoint spacing.", exc.details)
+    places = exc.details["places"]
+    return TripTooLarge(
+        f"This trip is too long for the free weather service: it needs weather for {places} "
+        f"places, more than the service allows per minute.",
+        exc.details,
+    )
