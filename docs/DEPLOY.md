@@ -16,7 +16,8 @@ tell the backend the frontend's address.
    - **Railway Config File:** `/backend/railway.json` (sets the start command and the health
      check). If the setting isn't there, paste the start command from that file into
      **Deploy → Custom Start Command** and set the healthcheck path to `/api/health`.
-   - **Networking → Generate Domain.** Note it, e.g. `spotter-backend.up.railway.app`.
+   - **Networking → Generate Domain.** When asked for the port, enter `8080` (the same value
+     as the `PORT` variable below). Note the domain, e.g. `spotter-backend.up.railway.app`.
 3. **Variables:**
 
    | Name | Value |
@@ -26,6 +27,7 @@ tell the backend the frontend's address.
    | `DEBUG` | `false` |
    | `ALLOWED_HOSTS` | the Railway domain, without `https://` |
    | `CORS_ALLOWED_ORIGINS` | leave empty for now; set in step 3 |
+   | `PORT` | `8080`. gunicorn listens on `$PORT`, and the domain must send traffic to the same port. |
 
    ```bash
    python3 -c "import secrets; print(secrets.token_urlsafe(50))"
@@ -55,6 +57,7 @@ Only the production address is allowed, on purpose.
 |---|---|
 | "Could not reach the server" | `VITE_API_BASE_URL` wrong or not redeployed, or CORS: check the browser console for a CORS error and fix `CORS_ALLOWED_ORIGINS` |
 | "The server answered with status 400" on every call | `ALLOWED_HOSTS` doesn't match the Railway domain |
+| Railway shows "Application failed to respond" | The domain's port and the `PORT` variable differ; both must be `8080` |
 | Railway deploy crashes at start | Missing `DJANGO_SECRET_KEY` or `HERE_API_KEY`; the log names the variable |
 | "Weather service's request limit was reached" | Open-Meteo's free per-IP limit (shared IP on Railway); see DECISIONS.md |
 
