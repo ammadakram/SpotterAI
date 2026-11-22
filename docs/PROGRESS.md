@@ -3,7 +3,7 @@
 _Last updated: 2026-11-22_
 
 ## Status
-Phase: **Build — Slice 3 code done** → Slice 5 done (not yet tried on the hosted app) → next: try every ASSESSMENT case on the hosted app, then Slice 6 (README + Loom).
+Phase: **Ship** — all six slices built, deployed and checked live; README done → next: record the Loom, then submit.
 
 ## Done
 - Claude context setup: CLAUDE.md, docs/ (PROGRESS, DECISIONS, ASSESSMENT), `/checkpoint` command.
@@ -16,12 +16,14 @@ Phase: **Build — Slice 3 code done** → Slice 5 done (not yet tried on the ho
 - Slice 3 (code): `risk.py` (bands, load rules), `forecast.py` (hour pick), `assess.py`, `ranking.py` (TDD); Open-Meteo client (batches of 100, parallel, 30-min cache, strict parsing); plan response has risk, stretches, ranking; UI: coloured dots, legend, checkpoint popup, route cards with risk strip, recommendation + reason, Open-Meteo credit. 122 backend + 6 frontend tests. Reviewed; findings fixed.
 - Slice 4: `corridor.py` (0.5° cells within 30 mi), `heatmap.py` (49 hours, same risk rules), heatmap in the response; `lib/heatmap.ts` (Vitest), fill layer under the routes, 0–48 h slider with play, Risk/Wind/Rain/Snow picker, shared `SegmentedControl`. Slider makes no network calls (checked). TRIP_TOO_LARGE (422) refuses plans over Open-Meteo's free per-minute limit before any call. 141 backend + 9 frontend tests. Reviewed; findings fixed.
 - Slice 5: simplified route lines (10 m), same-place / 0 m routes refused, single-route reason, loading overlay, phone layout, unslop polish (Plex, radii, focus, copy). 150 backend + 10 frontend tests. Reviewed; findings fixed.
+- Slice 6: README (what it does, how a plan is computed, answers to the brief's open questions, speed and cost, known limits, setup). Loom outline written to `loom-outline.md` (git-ignored via .git/info/exclude).
+- Hosted checks 2026-11-22 (live API): normal plan, 45,001 lb / spacing 30 / +3 days → 400, same place → 400, Honolulu → 422 NO_ROUTE_FOUND, LA → Chicago 10 mi → 422 TRIP_TOO_LARGE, at 50 mi → 200. Severe/No-travel can't be reproduced in today's calm weather (covered by tests).
 - First deploy 2026-11-22: backend on Railway, frontend on Vercel (addresses kept out of the repo). Checked live: health, CORS (only the Vercel origin), noindex, LA → Chicago at 10 mi (629 checkpoints) in ~3.4 s with no Open-Meteo limit errors.
 - Walkthrough fixes to ARCHITECTURE.md: `decidedBy` value list, `isLoadEscalated` example, heatmap `startsAt` = the hour bucket containing now, place-search debounce + `limit=5`.
 
 ## Next up
-1. After pushing: try every ASSESSMENT.md case on the hosted (Vercel) app — Slice 5's "done when".
-2. Slice 6: README (known limits: 3 routes, unknown miles out of ranking, Open-Meteo free limit / TRIP_TOO_LARGE, free-tier hosts), then the Loom (outline with times and code pointers; re-check demo trips the day of recording).
+1. Before recording: wake the backend (/api/health) and ask Claude to re-scan the forecast for demo trips with Severe and load escalation.
+2. Record the Loom with `loom-outline.md`; submit the repo link, the live link and the video.
 
 ## Open questions
-- Open-Meteo: very long trips at 10 mi spacing can still exceed 600 calls/min (0.5° cells chosen; paid key if it shows up).
+- None.
