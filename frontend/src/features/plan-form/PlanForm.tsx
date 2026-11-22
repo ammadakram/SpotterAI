@@ -56,17 +56,21 @@ export function PlanForm({ isSubmitting, onSubmit }: Props) {
 
       <div>
         <label htmlFor="departure" className="mb-1 block text-sm font-medium text-slate-700">
-          Departure <span className="font-normal text-slate-500">(empty = now)</span>
+          Departure
         </label>
         <input
           id="departure"
           type="datetime-local"
-          className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm"
+          aria-describedby="departure-hint"
+          className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-slate-500 focus:outline-none"
           value={departure}
           min={toDateTimeLocal(openedAt)}
           max={toDateTimeLocal(hoursFrom(openedAt, MAX_HOURS_AHEAD))}
           onChange={(event) => setDeparture(event.target.value)}
         />
+        <p id="departure-hint" className="mt-1 text-xs text-slate-500">
+          Leave empty to depart now
+        </p>
       </div>
 
       <div className="flex gap-3">
@@ -80,7 +84,7 @@ export function PlanForm({ isSubmitting, onSubmit }: Props) {
             type="text"
             inputMode="numeric"
             placeholder="e.g. 32000"
-            className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm"
+            className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm tabular-nums focus:border-slate-500 focus:outline-none"
             value={load}
             onChange={(event) => setLoad(event.target.value.replace(/\D/g, ''))}
           />
@@ -103,7 +107,7 @@ export function PlanForm({ isSubmitting, onSubmit }: Props) {
       <button
         type="submit"
         disabled={isSubmitting}
-        className="w-full rounded-md bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-800 disabled:opacity-60"
+        className="w-full rounded-lg bg-slate-900 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-slate-800 disabled:opacity-60 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600"
       >
         {isSubmitting ? 'Planning…' : 'Plan routes'}
       </button>

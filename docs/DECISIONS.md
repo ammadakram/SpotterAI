@@ -47,7 +47,6 @@ One line each. Newest at the bottom. Include *why*, and record dead ends so they
 - 2026-11-16 — HERE routes with a `critical` section notice (e.g. violated truck restriction) are dropped; if none remain → NO_ROUTE_FOUND. Why: such a route is not legal for this truck.
 - 2026-11-16 — API tests fake HERE at the HTTP level (`httpx.MockTransport` serving recorded JSON), not with a fake client object. Why: the tests then also cover our request params (gross weight, limit=5) and parsing.
 - 2026-11-16 — Place-search failures use ROUTING_UNAVAILABLE (502) with their own message; no extra error code. Why: same provider (HERE), and the UI only shows the message.
-- LATER (Slice 5) — Simplify route geometry for display (now ~8,800 points per route, response ~550 KB), as ARCHITECTURE.md specifies.
 - 2026-11-16 — Rain = Open-Meteo `rain` + `showers` (user confirmed). Gusts are display-only, so a missing gust doesn't make a checkpoint NO_FORECAST.
 - 2026-11-16 — `isLoadEscalated` is true only when the load rule changed the checkpoint's final level. Why: if rain is already Severe, the load changed nothing the driver sees.
 - 2026-11-16 — Stretches cover the whole route (Low included) and sum to its length. Route card = one summary line (No travel / Severe / High miles, Avg, No forecast) + the coloured risk strip; no per-stretch text. Why (user): stretch details repeat what the map shows and confused the card.
@@ -63,6 +62,11 @@ One line each. Newest at the bottom. Include *why*, and record dead ends so they
 - 2026-11-22 — Progressive loading not needed: the heatmap adds ~10 KB gzipped (Dallas → Denver: 124 cells; plan 167 KB gzipped, 4.4 s cold / 2.0 s cached).
 - LATER — HOS rest breaks as an optional toggle, after the core is done.
 - LATER — Loom: mention WeatherOptics (the industry's white-label risk engine) once the core is built.
+
+- 2026-11-22 — Route lines are simplified for drawing only (Douglas–Peucker, 10 m: Dallas → Denver 8,791 → 1,266 points). 50 m was tried first (582 points) but put checkpoint dots visibly off the line at street zoom. Miles, ETAs and checkpoints use HERE's full line.
+- 2026-11-22 — Same place: origin and destination under 100 m apart → 400 before HERE is called; a 0 m HERE route → NO_ROUTE_FOUND. Why: a zero-length trip crashed the assessment with a 500.
+- 2026-11-22 — Phones: map on top (half the screen), panel below; map framing padding scales with the map's height. Loading overlay on the map while planning.
+- 2026-11-22 — unslop pass (light slop, polish mode): IBM Plex Sans (user's choice), radii by size (controls 8, cards and panels 12), SVG play/pause icons, focus rings, tabular figures in route cards, plain copy (departure hint, subtitle, no trailing periods on one-line reasons).
 
 ## Tried & rejected / mistakes
 - 2026-11-16 — Place search kept the previous query's results visible (`keepPreviousData`) so Enter could pick a place for older text; and Enter in a loading list submitted the form. Fixed: results only count when they match the current text, and Enter in an open list never submits.

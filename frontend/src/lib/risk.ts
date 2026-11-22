@@ -35,25 +35,29 @@ export function recommendationReason(plan: Plan): string | null {
   const best = byId.get(orderedRouteIds[0])
   const next = byId.get(orderedRouteIds[1])
   if (!best || !decidedBy) return null
-  if (decidedBy === 'ONLY_DRIVABLE') return 'The only route without No Travel conditions.'
+  if (decidedBy === 'ONLY_DRIVABLE')
+    // ONLY_DRIVABLE also covers HERE returning a single route: nothing was compared then.
+    return plan.routes.length === 1
+      ? 'The only route found between these places'
+      : 'The only route without No Travel conditions'
   if (!next) return null
 
   const vs = (a: string, b: string) => `${a} vs ${b} on ${next.label}`
   switch (decidedBy) {
     case 'SEVERE_MILES':
-      return `Fewest Severe miles: ${vs(miles(best, 'severe'), miles(next, 'severe'))}.`
+      return `Fewest Severe miles: ${vs(miles(best, 'severe'), miles(next, 'severe'))}`
     case 'HIGH_MILES':
-      return `Same Severe miles, fewer High miles: ${vs(miles(best, 'high'), miles(next, 'high'))}.`
+      return `Same Severe miles, fewer High miles: ${vs(miles(best, 'high'), miles(next, 'high'))}`
     case 'AVERAGE_RISK':
       return `Same Severe and High miles, lower average risk: ${vs(
         best.averageRisk.toFixed(2),
         next.averageRisk.toFixed(2),
-      )}.`
+      )}`
     case 'DURATION':
       // A full tie also reports DURATION; the backend then keeps HERE's order.
       if (Math.round(best.durationS) === Math.round(next.durationS))
-        return 'Equal on risk and travel time; listed first by the routing service.'
-      return `Equal risk, shorter trip: ${vs(formatDuration(best.durationS), formatDuration(next.durationS))}.`
+        return 'Equal on risk and travel time; listed first by the routing service'
+      return `Equal risk, shorter trip: ${vs(formatDuration(best.durationS), formatDuration(next.durationS))}`
   }
 }
 

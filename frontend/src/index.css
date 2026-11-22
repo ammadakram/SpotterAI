@@ -1,1 +1,6 @@
 @import 'tailwindcss';
+
+@theme {
+  /* Plex: technical and exact, for an operations tool. System fonts stand in while it loads. */
+  --font-sans: 'IBM Plex Sans', ui-sans-serif, system-ui, sans-serif;
+}

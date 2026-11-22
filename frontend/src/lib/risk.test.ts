@@ -42,7 +42,7 @@ describe('recommendationReason', () => {
         decidedBy: 'SEVERE_MILES',
       }),
     )
-    expect(result).toBe('Fewest Severe miles: 10.0 mi vs 40.0 mi on Route B.')
+    expect(result).toBe('Fewest Severe miles: 10.0 mi vs 40.0 mi on Route B')
   })
 
   it('names the tie that came before the deciding criterion', () => {
@@ -53,7 +53,7 @@ describe('recommendationReason', () => {
         decidedBy: 'HIGH_MILES',
       }),
     )
-    expect(result).toBe('Same Severe miles, fewer High miles: 10.0 mi vs 40.0 mi on Route B.')
+    expect(result).toBe('Same Severe miles, fewer High miles: 10.0 mi vs 40.0 mi on Route B')
   })
 
   it('uses travel time when risk is equal', () => {
@@ -64,7 +64,7 @@ describe('recommendationReason', () => {
         decidedBy: 'DURATION',
       }),
     )
-    expect(result).toBe('Equal risk, shorter trip: 1 h 0 min vs 1 h 30 min on Route B.')
+    expect(result).toBe('Equal risk, shorter trip: 1 h 0 min vs 1 h 30 min on Route B')
   })
 
   it('does not claim a shorter trip when everything is equal', () => {
@@ -75,7 +75,18 @@ describe('recommendationReason', () => {
         decidedBy: 'DURATION',
       }),
     )
-    expect(result).toBe('Equal on risk and travel time; listed first by the routing service.')
+    expect(result).toBe('Equal on risk and travel time; listed first by the routing service')
+  })
+
+  it('says when the routing service found only one route', () => {
+    const result = recommendationReason(
+      plan([route('A')], {
+        orderedRouteIds: ['A'],
+        recommendedRouteId: 'A',
+        decidedBy: 'ONLY_DRIVABLE',
+      }),
+    )
+    expect(result).toBe('The only route found between these places')
   })
 
   it('explains a lone drivable route', () => {
@@ -86,7 +97,7 @@ describe('recommendationReason', () => {
         decidedBy: 'ONLY_DRIVABLE',
       }),
     )
-    expect(result).toBe('The only route without No Travel conditions.')
+    expect(result).toBe('The only route without No Travel conditions')
   })
 
   it('has nothing to say when no route is drivable', () => {

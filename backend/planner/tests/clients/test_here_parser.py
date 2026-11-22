@@ -89,3 +89,14 @@ def test_no_route_found_when_every_route_breaks_a_truck_restriction():
 
     with pytest.raises(NoRouteFound):
         parse_routes(data)
+
+
+def test_a_route_of_zero_length_is_no_route():
+    # Two points that snap to the same spot on the road: there is no trip to plan.
+    data = load_fixture("here_routes_dallas_denver.json")
+    for route in data["routes"]:
+        for span in route["sections"][0]["spans"]:
+            span["length"] = 0
+
+    with pytest.raises(NoRouteFound):
+        parse_routes(data)

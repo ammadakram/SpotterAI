@@ -4,7 +4,7 @@ import { RISK_COLOURS } from '../../lib/risk'
 /** Colours of the corridor heatmap for the chosen variable. Checkpoint dots always show risk. */
 export function RiskLegend({ variable }: { variable: HeatmapVariable }) {
   return (
-    <div className="absolute bottom-8 left-2 rounded-md bg-white/90 px-3 py-2 text-xs text-slate-700 shadow">
+    <div className="absolute bottom-8 left-2 origin-bottom-left rounded-xl bg-white/90 px-3 py-2 text-xs text-slate-700 shadow max-md:scale-75">
       <div className="mb-1 font-medium">{VARIABLE_LABELS[variable]}</div>
       <ul className="space-y-0.5">
         {HEATMAP_STEPS[variable].map((step) => (

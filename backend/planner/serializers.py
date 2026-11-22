@@ -7,7 +7,7 @@ from rest_framework import serializers
 
 from planner.domain.checkpoints import SPACINGS_MI
 from planner.domain.corridor import CELL_DEG
-from planner.domain.geometry import METERS_PER_MILE
+from planner.domain.geometry import METERS_PER_MILE, distance_m, simplify
 from planner.domain.heatmap import HEATMAP_HOURS
 from planner.domain.risk import SEVERITY
 from planner.domain.types import Heatmap, RatedCheckpoint, RiskLevel
@@ -17,6 +17,12 @@ MAX_LOAD_LB = 45_000
 MAX_DEPARTURE_AHEAD = timedelta(hours=48)
 # "Depart now" reaches the server a few seconds late; don't reject it for that.
 DEPARTURE_GRACE = timedelta(minutes=10)
+# Closer than this, there is no trip to plan (HERE returns an empty or zero-length route).
+SAME_PLACE_M = 100
+# Drawing only: points that move the line by less than this are dropped (~7x fewer points).
+# 10 m is a few pixels even at street zoom, so checkpoint dots still sit on the drawn line.
+# Miles, ETAs and checkpoints always use HERE's full line.
+DRAW_TOLERANCE_M = 10
 
 
 class PlaceSerializer(serializers.Serializer):
@@ -39,6 +45,17 @@ class PlanRequestSerializer(serializers.Serializer):
                 "Departure must be between now and 48 hours from now."
             )
         return value
+
+    def validate(self, data: dict) -> dict:
+        origin, destination = data["origin"], data["destination"]
+        if (
+            distance_m((origin["lon"], origin["lat"]), (destination["lon"], destination["lat"]))
+            < SAME_PLACE_M
+        ):
+            raise serializers.ValidationError(
+                {"destination": ["Origin and destination are the same place."]}
+            )
+        return data
 
     def to_request(self) -> PlanRequest:
         data = self.validated_data
@@ -114,7 +131,7 @@ def _route_json(planned: PlannedRoute) -> dict:
     return {
         "id": planned.id,
         "label": planned.label,
-        "geometry": [_coordinates(p) for p in planned.route.points],
+        "geometry": [_coordinates(p) for p in simplify(planned.route.points, DRAW_TOLERANCE_M)],
         "distanceMi": _miles(planned.route.distance_m / METERS_PER_MILE),
         "durationS": round(planned.route.duration_s),
         "arrivalAt": _time(planned.arrival),

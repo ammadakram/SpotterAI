@@ -316,3 +316,33 @@ def test_heatmap_values_just_under_a_band_edge_stay_under_it(client, fake_here, 
     assert cell["risk"][0] == 0
     assert cell["windMph"][0] == 24.9
     assert cell["rainInHr"][0] == 0.099
+
+
+def test_route_lines_are_simplified_for_drawing_but_keep_their_ends(client, fake_here):
+    plan = client.post("/api/plans", plan_body(), content_type="application/json").json()
+
+    first = plan["routes"][0]
+    assert len(first["geometry"]) < 8791 / 4  # HERE's line has 8,791 points
+    assert first["geometry"][0] == pytest.approx([-96.7999, 32.7797], abs=1e-4)
+    assert first["geometry"][-1] == pytest.approx([-104.99, 39.74], abs=1e-4)
+    # Distances still come from the full line: HERE's 797.6 mi, not the simplified shape.
+    assert first["distanceMi"] == 797.6
+
+
+@pytest.mark.parametrize(
+    "destination",
+    [
+        pytest.param(DALLAS, id="identical"),
+        pytest.param({**DALLAS, "lon": DALLAS["lon"] + 0.0005}, id="a few metres apart"),
+    ],
+)
+def test_origin_and_destination_at_the_same_place_is_rejected(client, fake_here, destination):
+    response = client.post(
+        "/api/plans", plan_body(destination=destination), content_type="application/json"
+    )
+
+    assert response.status_code == 400
+    error = response.json()["error"]
+    assert error["code"] == "VALIDATION_ERROR"
+    assert error["message"] == "destination: Origin and destination are the same place."
+    assert fake_here.requests == []

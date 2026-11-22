@@ -23,12 +23,12 @@ export function SegmentedControl<T extends string | number>({
     <div
       role="radiogroup"
       aria-label={label}
-      className="flex rounded-md border border-slate-300 p-0.5"
+      className="flex rounded-lg border border-slate-300 p-0.5"
     >
       {options.map((option) => (
         <label
           key={option.value}
-          className="flex-1 cursor-pointer whitespace-nowrap rounded px-2 py-1.5 text-center text-sm text-slate-600 has-checked:bg-slate-900 has-checked:text-white has-focus-visible:ring-2 has-focus-visible:ring-slate-400"
+          className="flex-1 cursor-pointer whitespace-nowrap rounded-md px-2 py-1.5 text-center text-sm text-slate-600 has-checked:bg-slate-900 has-checked:text-white has-focus-visible:ring-2 has-focus-visible:ring-slate-400"
         >
           <input
             type="radio"

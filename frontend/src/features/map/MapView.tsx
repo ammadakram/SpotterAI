@@ -91,9 +91,18 @@ export function MapView({
         ? routes.flatMap((route) => route.geometry)
         : (heatmap?.cells.map((cell) => cell.center) ?? [])
     if (points.length === 0) return
-    // The top padding keeps the trip clear of the forecast controls drawn over the map.
-    mapRef.current?.fitBounds(boundsOf(points), {
-      padding: { top: 130, bottom: 40, left: 40, right: 40 },
+    const map = mapRef.current
+    if (!map) return
+    // The top padding keeps the trip clear of the forecast controls drawn over the map. It
+    // shrinks with the map, so a short phone map still has room left for the trip.
+    const height = map.getContainer().clientHeight
+    map.fitBounds(boundsOf(points), {
+      padding: {
+        top: Math.min(130, height * 0.3),
+        bottom: Math.min(40, height * 0.1),
+        left: 40,
+        right: 40,
+      },
       duration: 800,
     })
   }, [routes, heatmap])

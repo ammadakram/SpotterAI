@@ -15,7 +15,7 @@ export function RouteCard({ route, isRecommended, isSelected, onSelect }: Props)
       type="button"
       aria-pressed={isSelected}
       onClick={onSelect}
-      className={`w-full rounded-md border px-4 py-3 text-left text-sm ${
+      className={`w-full rounded-xl border px-4 py-3 text-left text-sm transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600 ${
         isSelected
           ? 'border-blue-600 ring-1 ring-blue-600'
           : 'border-slate-200 hover:border-slate-400'
@@ -34,7 +34,7 @@ export function RouteCard({ route, isRecommended, isSelected, onSelect }: Props)
           </span>
         )}
       </div>
-      <div className="mt-1 text-slate-600">
+      <div className="mt-1 tabular-nums text-slate-600">
         {formatMiles(route.distanceMi)} · {formatDuration(route.durationS)} · arrives{' '}
         {formatTime(route.arrivalAt)}
       </div>
@@ -42,7 +42,7 @@ export function RouteCard({ route, isRecommended, isSelected, onSelect }: Props)
       <RiskStrip route={route} />
 
       {/* The numbers the ranking compares, always visible. */}
-      <div className="mt-2 text-slate-600">{summary(route)}</div>
+      <div className="mt-2 tabular-nums text-slate-600">{summary(route)}</div>
     </button>
   )
 }

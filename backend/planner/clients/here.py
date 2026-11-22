@@ -117,7 +117,11 @@ def parse_routes(data: dict) -> list[Route]:
             logger.info(
                 "Dropped %d HERE route(s) with critical notices", len(data["routes"]) - len(legal)
             )
-        return [_parse_route(route) for route in legal]
+        # Points that snap to the same spot on the road give a 0 m route: nothing to plan.
+        routes = [r for r in (_parse_route(route) for route in legal) if r.distance_m > 0]
+        if not routes:
+            raise NoRouteFound("Origin and destination are the same place on the road.")
+        return routes
     except (KeyError, TypeError, ValueError, AttributeError) as exc:
         # The message holds only response data (never the request URL with its key).
         logger.warning("Unreadable HERE routes response: %r", exc)

@@ -66,7 +66,7 @@ export function PlaceInput({ label, value, onChange }: Props) {
         aria-activedescendant={showList && places[activeIndex] ? `${id}-${activeIndex}` : undefined}
         autoComplete="off"
         placeholder="City or address"
-        className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-slate-500 focus:outline-none"
+        className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-slate-500 focus:outline-none"
         value={text}
         onChange={(event) => {
           setText(event.target.value)
@@ -82,7 +82,7 @@ export function PlaceInput({ label, value, onChange }: Props) {
         <ul
           id={`${id}-list`}
           role="listbox"
-          className="absolute z-10 mt-1 w-full overflow-hidden rounded-md border border-slate-200 bg-white text-sm shadow-lg"
+          className="absolute z-10 mt-1 w-full overflow-hidden rounded-lg border border-slate-200 bg-white text-sm shadow-lg"
         >
           {isCurrent && search.isError ? (
             <li className="px-3 py-2 text-red-700">{search.error.message}</li>
