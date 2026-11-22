@@ -13,6 +13,7 @@ export function CheckpointPopup({ checkpoint, onClose }: Props) {
       latitude={checkpoint.coordinates[1]}
       onClose={onClose}
       closeOnClick={false}
+      closeButton={false}
       maxWidth="260px"
     >
       <div className="space-y-1 text-sm text-slate-800">
