@@ -54,13 +54,12 @@ One line each. Newest at the bottom. Include *why*, and record dead ends so they
 - 2026-11-16 — Ranking compares miles rounded to 0.1 and the average to 0.01, the precision shown. Why: float noise must not decide a winner on a difference nobody can see.
 - 2026-11-16 — A route with no usable forecast at all → 502 WEATHER_UNAVAILABLE, not a plan of grey dots. Weather values that are NaN, infinite or negative are rejected.
 - 2026-11-16 — Checkpoint spacing is a 3-button toggle, not a native select (user: the native popup covered the field). Load is a digits-only text field (no spinner).
-- 2026-11-16 — Hosting: Vercel (frontend); backend first planned on Railway (no sleeping, ~$5/month). Gunicorn: 1 worker, 8 threads, so the in-memory weather cache is shared. Frontend reads `VITE_API_BASE_URL` (backend URL stays out of the repo); backend allows only that origin (CORS). Gzip on: plan response 565 KB → 153 KB.
+- 2026-11-16 — Hosting: Vercel (frontend) + Railway (backend), not Render's free plan (sleeps after ~15 min idle; the next visitor waits 30–60 s). Gunicorn: 1 worker, 8 threads, so the in-memory weather cache is shared. Frontend reads `VITE_API_BASE_URL` (backend URL stays out of the repo); backend allows only that origin (CORS). Gzip on: plan response 565 KB → 153 KB. Steps in docs/DEPLOY.md.
 - 2026-11-16 — Kept: unknown (no-forecast) miles stay out of ranking. Known limit: a long trip leaving at +48 h can run past the 4-day forecast, and a mostly-unknown route could then win on average risk. User chose not to add a rule the brief doesn't give. Mention in the Loom.
-- 2026-11-21 — Backend moved to Render's free plan (user: free). Accepted cost: it sleeps after ~15 min idle and the next request waits 30–60 s; mentioned in the README and Loom. Config in `render.yaml` (Blueprint); uv builds `.venv` with Render's own Python (downloads off, so nothing lives outside the project folder); Render generates `DJANGO_SECRET_KEY`.
+- 2026-11-22 — Back to Railway. Briefly switched to Render's free plan (2026-11-21, to save the ~$5/month), but Render's site was down for days, so the switch was reverted. Railway also avoids the free plan's 30–60 s wake-up.
 - LATER (v2) — Progressive loading: send routes + checkpoints + ranking first, heatmap in a second request. Measure the v1 response time first; only do it if the wait is noticeable.
 - LATER — HOS rest breaks as an optional toggle, after the core is done.
 - LATER — Loom: mention WeatherOptics (the industry's white-label risk engine) once the core is built.
-- LATER — Hosting: VPS vs Vercel + Render. Affects the Open-Meteo rate limit (shared vs dedicated IP).
 
 ## Tried & rejected / mistakes
 - 2026-11-16 — Place search kept the previous query's results visible (`keepPreviousData`) so Enter could pick a place for older text; and Enter in a loading list submitted the form. Fixed: results only count when they match the current text, and Enter in an open list never submits.

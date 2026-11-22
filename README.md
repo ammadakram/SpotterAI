@@ -26,7 +26,7 @@ npm run dev
 
 ## Deploy
 
-Backend on Render (free plan; it sleeps after ~15 min idle, so the first request after that takes 30–60 s), frontend on Vercel: see [docs/DEPLOY.md](docs/DEPLOY.md).
+Backend on Railway, frontend on Vercel: see [docs/DEPLOY.md](docs/DEPLOY.md).
 
 ## Checks
 

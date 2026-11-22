@@ -1,9 +1,9 @@
 # Progress
 
-_Last updated: 2026-11-21_
+_Last updated: 2026-11-22_
 
 ## Status
-Phase: **Build — Slice 3 code done** → next: Slice 4 (heatmap); deploy (Vercel + Render) when Render is reachable.
+Phase: **Build — Slice 3 code done** → next: Slice 4 (heatmap), then deploy (Vercel + Railway).
 
 ## Done
 - Claude context setup: CLAUDE.md, docs/ (PROGRESS, DECISIONS, ASSESSMENT), `/checkpoint` command.
@@ -18,7 +18,7 @@ Phase: **Build — Slice 3 code done** → next: Slice 4 (heatmap); deploy (Verc
 
 ## Next up
 1. Slice 4 (`docs/PLAN.md`): corridor grid + heatmap + 0–48 h slider. Required by the brief; record the Loom only after it.
-2. Deploy with docs/DEPLOY.md (Render Blueprint `render.yaml` + Vercel); then check the live site and the real Open-Meteo per-IP limit. Render's Python version is unverified (docs were down): the build fails loudly if it's < 3.12.
+2. Deploy with docs/DEPLOY.md (Railway + Vercel; code is ready: gunicorn, gzip, `VITE_API_BASE_URL`, `backend/railway.json`); then check the live site and the real Open-Meteo per-IP limit.
 
 ## Open questions
 - Open-Meteo: very long trips at 10 mi spacing can still exceed 600 calls/min (0.5° cells chosen; paid key if it shows up).
